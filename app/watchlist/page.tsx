@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { useWatchlist } from '@/features/watchlist/application/hooks/useWatchlist'
-
-const MARKET_OPTIONS = ['KOSPI', 'KOSDAQ', 'NASDAQ', 'NYSE']
+import { useStockSearch } from '@/features/stock/application/hooks/useStockSearch'
+import type { StockItem } from '@/features/stock/domain/model/stockItem'
 
 const MARKET_BADGE: Record<string, string> = {
     KOSPI:  'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
@@ -24,57 +24,80 @@ function MarketBadge({ market }: { market?: string | null }) {
 
 export default function WatchlistPage() {
     const { items, isLoading, error, add, remove } = useWatchlist()
-    const [input, setInput] = useState('')
-    const [market, setMarket] = useState('')
+    const { results, isLoading: isSearching, error: searchError, query, search, clear } = useStockSearch()
+    const [registering, setRegistering] = useState<string | null>(null)
 
-    const handleAdd = async () => {
-        const value = input.trim()
-        if (!value) return
-        await add(value, market || undefined)
-        setInput('')
-        setMarket('')
+    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+        search(e.target.value)
+    }
+
+    const handleRegister = async (item: StockItem) => {
+        setRegistering(item.symbol)
+        const ok = await add(item.symbol, item.name, item.market)
+        setRegistering(null)
+        if (ok) clear()
     }
 
     return (
         <main className="min-h-screen bg-background text-foreground p-8">
             <h1 className="text-2xl font-bold mb-8">관심종목</h1>
 
-            {/* 등록 UI */}
+            {/* 검색 UI */}
             <section className="mb-8">
-                <h2 className="text-lg font-semibold mb-3">종목 등록</h2>
-                <div className="flex gap-2 flex-wrap">
+                <h2 className="text-lg font-semibold mb-3">종목 검색</h2>
+                <div className="relative">
                     <input
                         type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-                        placeholder="종목 코드(005930) 또는 종목명(삼성전자)"
-                        className="flex-1 min-w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background text-foreground dark:border-gray-600"
+                        value={query}
+                        onChange={handleSearch}
+                        placeholder="종목 코드(005930) 또는 종목명(삼성전자, Apple)"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background text-foreground dark:border-gray-600"
                     />
-                    <select
-                        value={market}
-                        onChange={(e) => setMarket(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg bg-background text-foreground dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                        <option value="">시장 선택 (선택)</option>
-                        {MARKET_OPTIONS.map((m) => (
-                            <option key={m} value={m}>{m}</option>
-                        ))}
-                    </select>
-                    <button
-                        onClick={handleAdd}
-                        disabled={isLoading}
-                        className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors disabled:opacity-50"
-                    >
-                        등록
-                    </button>
+                    {isSearching && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+                            검색 중...
+                        </span>
+                    )}
                 </div>
-                {error && (
-                    <p className="mt-2 text-sm text-red-500">{error}</p>
+
+                {searchError && (
+                    <p className="mt-2 text-sm text-red-500">{searchError}</p>
+                )}
+
+                {query.length > 0 && !isSearching && results.length === 0 && !searchError && (
+                    <p className="mt-2 text-sm text-gray-500">검색 결과가 없습니다.</p>
+                )}
+
+                {results.length > 0 && (
+                    <ul className="mt-2 border border-gray-200 rounded-lg overflow-hidden dark:border-gray-700">
+                        {results.map((item) => (
+                            <li
+                                key={item.symbol}
+                                className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-b-0 dark:border-gray-700"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span className="font-mono text-sm font-semibold text-gray-500">{item.symbol}</span>
+                                    <span className="font-medium">{item.name}</span>
+                                    <MarketBadge market={item.market} />
+                                </div>
+                                <button
+                                    onClick={() => handleRegister(item)}
+                                    disabled={registering === item.symbol}
+                                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                                >
+                                    {registering === item.symbol ? '등록 중...' : '등록'}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
                 )}
             </section>
 
-            {/* 목록 UI */}
+            {error && (
+                <p className="mb-4 text-sm text-red-500">{error}</p>
+            )}
+
+            {/* 관심종목 목록 */}
             <section>
                 <h2 className="text-lg font-semibold mb-3">
                     관심종목 목록{' '}
@@ -82,10 +105,14 @@ export default function WatchlistPage() {
                 </h2>
 
                 {isLoading ? (
-                    <p className="text-gray-500 py-8 text-center">불러오는 중...</p>
+                    <div className="flex flex-col gap-2">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="h-14 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" />
+                        ))}
+                    </div>
                 ) : items.length === 0 ? (
                     <p className="text-gray-500 py-8 text-center border border-dashed border-gray-300 rounded-lg dark:border-gray-600">
-                        등록된 관심종목이 없습니다.
+                        등록된 관심종목이 없습니다. 위에서 종목을 검색하여 등록해 주세요.
                     </p>
                 ) : (
                     <ul className="flex flex-col gap-2">
@@ -95,12 +122,7 @@ export default function WatchlistPage() {
                                 className="flex items-center justify-between px-4 py-3 border border-gray-200 rounded-lg dark:border-gray-700"
                             >
                                 <div className="flex items-center gap-3">
-                                    {/* 종목코드가 이름과 다를 때만 코드 표시 */}
-                                    {item.symbol !== item.name && (
-                                        <span className="font-mono text-sm font-semibold text-gray-400">
-                                            {item.symbol}
-                                        </span>
-                                    )}
+                                    <span className="font-mono text-sm font-semibold text-gray-400">{item.symbol}</span>
                                     <span className="font-medium">{item.name}</span>
                                     <MarketBadge market={item.market} />
                                 </div>

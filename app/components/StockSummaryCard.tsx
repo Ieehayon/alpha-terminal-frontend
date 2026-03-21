@@ -1,11 +1,18 @@
+type Tag = string | { label: string; category?: string }
+
 interface StockSummaryCardProps {
   symbol: string;
   name: string;
   summary: string;
-  tags: string[];
+  tags: Tag[];
   sentiment?: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL';
   sentiment_score?: number;
   confidence?: number;
+}
+
+function tagLabel(tag: Tag): string {
+  if (typeof tag === 'string') return tag
+  return tag.label
 }
 
 const SENTIMENT_STYLE = {
@@ -48,12 +55,12 @@ export default function StockSummaryCard({
 
       {/* 태그 */}
       <div className="flex flex-wrap gap-2">
-        {tags.map((tag) => (
+        {tags.map((tag, i) => (
           <span
-            key={tag}
+            key={`${tagLabel(tag)}-${i}`}
             className="px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 rounded-full dark:bg-blue-950 dark:text-blue-300"
           >
-            {tag}
+            {tagLabel(tag)}
           </span>
         ))}
       </div>

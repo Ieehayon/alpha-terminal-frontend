@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { fetchDashboardSummaries, runPipeline } from "../../infrastructure/api/dashboardApi"
-import type { StockSummary } from "../../domain/model/stockSummary"
+import type { StockSummary, PipelineResult } from "../../domain/model/stockSummary"
 
 export const useDashboard = () => {
     const [summaries, setSummaries] = useState<StockSummary[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [pipelineResult, setPipelineResult] = useState<PipelineResult | null>(null)
 
     const load = useCallback(async () => {
         setIsLoading(true)
@@ -28,8 +29,10 @@ export const useDashboard = () => {
 
     const executePipeline = useCallback(async () => {
         setError(null)
+        setPipelineResult(null)
         try {
-            await runPipeline()
+            const result = await runPipeline()
+            setPipelineResult(result)
             await new Promise((resolve) => setTimeout(resolve, 500))
             await load()
         } catch {
@@ -37,5 +40,5 @@ export const useDashboard = () => {
         }
     }, [load])
 
-    return { summaries, isLoading, error, executePipeline }
+    return { summaries, isLoading, error, pipelineResult, executePipeline }
 }

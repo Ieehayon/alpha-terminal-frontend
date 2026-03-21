@@ -22,22 +22,19 @@ export const useWatchlist = () => {
         }
     }, [])
 
-    const add = useCallback(async (input: string, market?: string) => {
+    const add = useCallback(async (symbol: string, name: string, market?: string) => {
         setError(null)
-        const isCode = /^\d{6}$/.test(input)
-        const symbol = input
-        const name = input
         try {
             const item = await addWatchlistItem(symbol, name, market)
             setItems((prev) => [...prev, item])
+            return true
         } catch (err) {
             if (err instanceof Error && err.message.includes("409")) {
                 setError("이미 등록된 종목입니다.")
-            } else if (!isCode) {
-                setError("종목 코드(6자리 숫자)를 입력하거나 정확한 종목명을 입력해 주세요. 예: 005930")
             } else {
                 setError("등록에 실패했습니다.")
             }
+            return false
         }
     }, [])
 
