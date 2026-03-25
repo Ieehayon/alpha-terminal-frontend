@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { fetchDashboardSummaries, runPipeline } from "../../infrastructure/api/dashboardApi"
-import type { StockSummary, PipelineResult } from "../../domain/model/stockSummary"
+import { fetchAnalysisLogs, fetchDashboardSummaries, runPipeline } from "../../infrastructure/api/dashboardApi"
+import type { AnalysisLog, StockSummary, PipelineResult } from "../../domain/model/stockSummary"
 
 export const useDashboard = () => {
     const [summaries, setSummaries] = useState<StockSummary[]>([])
+    const [analysisLogs, setAnalysisLogs] = useState<AnalysisLog[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [pipelineResult, setPipelineResult] = useState<PipelineResult | null>(null)
@@ -14,8 +15,12 @@ export const useDashboard = () => {
         setIsLoading(true)
         setError(null)
         try {
-            const data = await fetchDashboardSummaries()
-            setSummaries(data)
+            const [summaryData, logData] = await Promise.all([
+                fetchDashboardSummaries(),
+                fetchAnalysisLogs(),
+            ])
+            setSummaries(summaryData)
+            setAnalysisLogs(logData)
         } catch {
             setError("데이터를 불러오지 못했습니다.")
         } finally {
@@ -27,11 +32,11 @@ export const useDashboard = () => {
         load()
     }, [load])
 
-    const executePipeline = useCallback(async () => {
+    const executePipeline = useCallback(async (symbols?: string[]) => {
         setError(null)
         setPipelineResult(null)
         try {
-            const result = await runPipeline()
+            const result = await runPipeline(symbols)
             setPipelineResult(result)
             await new Promise((resolve) => setTimeout(resolve, 500))
             await load()
@@ -40,5 +45,5 @@ export const useDashboard = () => {
         }
     }, [load])
 
-    return { summaries, isLoading, error, pipelineResult, executePipeline }
+    return { summaries, analysisLogs, isLoading, error, pipelineResult, executePipeline }
 }

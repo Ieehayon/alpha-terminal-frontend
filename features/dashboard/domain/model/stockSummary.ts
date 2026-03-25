@@ -22,3 +22,14 @@ export interface StockSummary {
     sentiment_score: number
     confidence: number
 }
+
+export interface AnalysisLog {
+    analyzed_at: string
+    symbol: string
+    name: string
+    summary: string
+    tags: string[]
+    sentiment: Sentiment
+    sentiment_score: number
+    confidence: number
+}
