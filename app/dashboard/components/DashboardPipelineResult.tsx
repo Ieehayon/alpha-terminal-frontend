@@ -4,22 +4,35 @@ type Props = {
     running: boolean
     pipelineResult: PipelineResult | null
     allSkipped: boolean
+    elapsedSeconds: number | null
 }
 
-export function DashboardPipelineResult({ running, pipelineResult, allSkipped }: Props) {
+export function DashboardPipelineResult({ running, pipelineResult, allSkipped, elapsedSeconds }: Props) {
     if (running || !pipelineResult) return null
 
     return (
         <div className="mb-6 border rounded-lg overflow-hidden dark:border-gray-700">
             <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b dark:border-gray-700 flex items-center justify-between">
                 <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">파이프라인 실행 결과</span>
-                {allSkipped ? (
-                    <span className="text-xs text-red-500 font-medium">전체 분석 실패</span>
-                ) : (
-                    <span className="text-xs text-green-600 font-medium">
-                        {pipelineResult.processed.filter((p) => !p.skipped).length}개 성공
-                    </span>
-                )}
+                <div className="flex items-center gap-3">
+                    {elapsedSeconds !== null && (
+                        <span className="text-xs text-gray-400">
+                            총 {elapsedSeconds}초 소요
+                        </span>
+                    )}
+                    {allSkipped ? (
+                        <span className="text-xs text-red-500 font-medium">전체 분석 실패</span>
+                    ) : (
+                        <span className="text-xs text-green-600 font-medium">
+                            {pipelineResult.processed.filter((p) => !p.skipped).length}개 성공
+                            {pipelineResult.processed.filter((p) => p.skipped).length > 0 && (
+                                <span className="ml-1 text-gray-400">
+                                    ({pipelineResult.processed.filter((p) => p.skipped).length}개 중복 건너뜀)
+                                </span>
+                            )}
+                        </span>
+                    )}
+                </div>
             </div>
             <ul className="divide-y dark:divide-gray-700">
                 {pipelineResult.processed.map((item) => (

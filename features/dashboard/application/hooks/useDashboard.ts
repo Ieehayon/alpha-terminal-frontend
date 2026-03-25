@@ -2,16 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { ApiError } from "@/infrastructure/http/apiError"
-import {
-    createFallbackPipelineProgressEvent,
-    type PipelineProgressEvent,
-} from "../../domain/model/pipelineProgressEvent"
+import type { PipelineProgressEvent } from "../../domain/model/pipelineProgressEvent"
 import {
     fetchAnalysisLogs,
     fetchDashboardSummaries,
+    fetchPipelineProgress,
     fetchReportSummaries,
     runPipeline,
-    runPipelineStream,
 } from "../../infrastructure/api/dashboardApi"
 import type { AnalysisLog, StockSummary, PipelineResult } from "../../domain/model/stockSummary"
 
@@ -39,6 +36,7 @@ export const useDashboard = () => {
     const [error, setError] = useState<string | null>(null)
     const [pipelineResult, setPipelineResult] = useState<PipelineResult | null>(null)
     const [progressEvents, setProgressEvents] = useState<PipelineProgressEvent[]>([])
+    const [elapsedSeconds, setElapsedSeconds] = useState<number | null>(null)
 
     const load = useCallback(async () => {
         setIsLoading(true)
@@ -67,28 +65,43 @@ export const useDashboard = () => {
         setError(null)
         setPipelineResult(null)
         setProgressEvents([])
+        setElapsedSeconds(null)
+
+        const startedAt = Date.now()
+        let polling = true
+
+        // /pipeline/progress 폴링 — 1.5초마다 메시지 갱신
+        const pollInterval = setInterval(async () => {
+            if (!polling) return
+            try {
+                const progress = await fetchPipelineProgress()
+                const events: PipelineProgressEvent[] = progress.messages.map((msg) => ({
+                    type: "progress",
+                    at: new Date().toISOString(),
+                    message: msg,
+                }))
+                setProgressEvents(events)
+                if (progress.done) {
+                    polling = false
+                    clearInterval(pollInterval)
+                }
+            } catch {
+                // 폴링 오류는 무시 (파이프라인 실행 중 일시적 실패 가능)
+            }
+        }, 1500)
 
         try {
-            const streamResult = await runPipelineStream(symbols, (e) => {
-                setProgressEvents((prev) => [...prev, e])
-            })
-
-            if (!streamResult.used) {
-                setProgressEvents([createFallbackPipelineProgressEvent()])
-                const result = await runPipeline(symbols)
-                setPipelineResult(result)
-                await new Promise((resolve) => setTimeout(resolve, 500))
-                await load()
-                setProgressEvents([])
-                return
-            }
-
-            if (streamResult.streamError) {
-                setError(streamResult.streamError)
-            }
+            const result = await runPipeline(symbols)
+            polling = false
+            clearInterval(pollInterval)
+            setElapsedSeconds(Math.round((Date.now() - startedAt) / 1000))
+            setPipelineResult(result)
             await load()
             setProgressEvents([])
         } catch (err) {
+            polling = false
+            clearInterval(pollInterval)
+            setElapsedSeconds(Math.round((Date.now() - startedAt) / 1000))
             setError(formatPipelineError(err))
             setProgressEvents([])
         }
@@ -102,6 +115,7 @@ export const useDashboard = () => {
         error,
         pipelineResult,
         progressEvents,
+        elapsedSeconds,
         executePipeline,
         reload: load,
     }

@@ -18,6 +18,7 @@ export default function DashboardPage() {
         error: summaryError,
         pipelineResult,
         progressEvents,
+        elapsedSeconds,
         executePipeline,
         reload,
     } = useDashboard()
@@ -105,6 +106,7 @@ export default function DashboardPage() {
                 running={running}
                 pipelineResult={pipelineResult}
                 allSkipped={allSkipped}
+                elapsedSeconds={elapsedSeconds}
             />
 
             {summaryError && (

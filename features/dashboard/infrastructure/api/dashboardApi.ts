@@ -25,6 +25,16 @@ export async function fetchAnalysisLogs(): Promise<AnalysisLog[]> {
     return res.json()
 }
 
+export interface PipelineProgressResponse {
+    messages: string[]
+    done: boolean
+}
+
+export async function fetchPipelineProgress(): Promise<PipelineProgressResponse> {
+    const res = await httpClient.get("/pipeline/progress")
+    return res.json()
+}
+
 export type RunPipelineStreamResult =
     | { used: false }
     | { used: true; streamError?: string }
