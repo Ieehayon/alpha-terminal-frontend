@@ -39,69 +39,76 @@ export default function WatchlistPage() {
     }
 
     return (
-        <main className="min-h-screen bg-background text-foreground p-8">
+        <main className="min-h-screen bg-background text-foreground p-8 max-w-2xl mx-auto">
             <h1 className="text-2xl font-bold mb-8">관심종목</h1>
 
             {/* 검색 UI */}
             <section className="mb-8">
-                <h2 className="text-lg font-semibold mb-3">종목 검색</h2>
+                <h2 className="text-base font-semibold mb-2 text-gray-700 dark:text-gray-300">종목 검색</h2>
                 <div className="relative">
-                    <input
-                        type="text"
-                        value={query}
-                        onChange={handleSearch}
-                        placeholder="종목 코드(005930) 또는 종목명(삼성전자, Apple)"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background text-foreground dark:border-gray-600"
-                    />
-                    {isSearching && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
-                            검색 중...
-                        </span>
+                    <div className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg bg-white dark:bg-gray-900 dark:border-gray-600 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
+                        <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <input
+                            type="text"
+                            value={query}
+                            onChange={handleSearch}
+                            placeholder="종목명 또는 코드로 검색 (예: 삼성전자, 005930)"
+                            className="flex-1 bg-transparent outline-none text-sm text-foreground placeholder-gray-400"
+                        />
+                        {isSearching && (
+                            <span className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin shrink-0" />
+                        )}
+                    </div>
+
+                    {searchError && (
+                        <p className="mt-2 text-sm text-red-500">{searchError}</p>
+                    )}
+
+                    {query.length > 0 && !isSearching && results.length === 0 && !searchError && (
+                        <p className="mt-2 text-sm text-gray-500">검색 결과가 없습니다.</p>
+                    )}
+
+                    {/* 검색 드롭다운 */}
+                    {results.length > 0 && (
+                        <ul className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                            {results.map((item) => (
+                                <li key={item.symbol}>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRegister(item)}
+                                        disabled={registering === item.symbol}
+                                        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-blue-950 text-left transition-colors disabled:opacity-50"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-mono text-xs text-gray-400 w-14">{item.symbol}</span>
+                                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.name}</span>
+                                            <MarketBadge market={item.market} />
+                                        </div>
+                                        <span className="text-xs text-blue-500 shrink-0">
+                                            {registering === item.symbol ? '등록 중...' : '+ 추가'}
+                                        </span>
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
                     )}
                 </div>
-
-                {searchError && (
-                    <p className="mt-2 text-sm text-red-500">{searchError}</p>
-                )}
-
-                {query.length > 0 && !isSearching && results.length === 0 && !searchError && (
-                    <p className="mt-2 text-sm text-gray-500">검색 결과가 없습니다.</p>
-                )}
-
-                {results.length > 0 && (
-                    <ul className="mt-2 border border-gray-200 rounded-lg overflow-hidden dark:border-gray-700">
-                        {results.map((item) => (
-                            <li
-                                key={item.symbol}
-                                className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-b-0 dark:border-gray-700"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <span className="font-mono text-sm font-semibold text-gray-500">{item.symbol}</span>
-                                    <span className="font-medium">{item.name}</span>
-                                    <MarketBadge market={item.market} />
-                                </div>
-                                <button
-                                    onClick={() => handleRegister(item)}
-                                    disabled={registering === item.symbol}
-                                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                                >
-                                    {registering === item.symbol ? '등록 중...' : '등록'}
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                )}
+                <p className="mt-1.5 text-xs text-gray-400">검색 결과를 클릭하면 바로 관심종목에 추가됩니다.</p>
             </section>
 
             {error && (
-                <p className="mb-4 text-sm text-red-500">{error}</p>
+                <div className="mb-4 px-4 py-3 bg-red-50 border border-red-300 text-red-700 rounded-lg dark:bg-red-950 dark:border-red-700 dark:text-red-300">
+                    {error}
+                </div>
             )}
 
             {/* 관심종목 목록 */}
             <section>
-                <h2 className="text-lg font-semibold mb-3">
-                    관심종목 목록{' '}
-                    <span className="text-sm font-normal text-gray-500">({items.length})</span>
+                <h2 className="text-base font-semibold mb-3 text-gray-700 dark:text-gray-300">
+                    등록된 관심종목
+                    <span className="ml-2 text-sm font-normal text-gray-400">({items.length})</span>
                 </h2>
 
                 {isLoading ? (
@@ -111,24 +118,24 @@ export default function WatchlistPage() {
                         ))}
                     </div>
                 ) : items.length === 0 ? (
-                    <p className="text-gray-500 py-8 text-center border border-dashed border-gray-300 rounded-lg dark:border-gray-600">
-                        등록된 관심종목이 없습니다. 위에서 종목을 검색하여 등록해 주세요.
+                    <p className="text-gray-400 py-10 text-center border border-dashed border-gray-300 rounded-lg dark:border-gray-700 text-sm">
+                        관심종목을 검색해서 추가해보세요.
                     </p>
                 ) : (
                     <ul className="flex flex-col gap-2">
                         {items.map((item) => (
                             <li
                                 key={item.id}
-                                className="flex items-center justify-between px-4 py-3 border border-gray-200 rounded-lg dark:border-gray-700"
+                                className="flex items-center justify-between px-4 py-3 border border-gray-200 rounded-lg dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                             >
                                 <div className="flex items-center gap-3">
-                                    <span className="font-mono text-sm font-semibold text-gray-400">{item.symbol}</span>
-                                    <span className="font-medium">{item.name}</span>
+                                    <span className="font-mono text-xs text-gray-400 w-14">{item.symbol}</span>
+                                    <span className="font-medium text-sm">{item.name}</span>
                                     <MarketBadge market={item.market} />
                                 </div>
                                 <button
                                     onClick={() => remove(item.id)}
-                                    className="px-3 py-1 text-sm text-red-600 border border-red-300 rounded hover:bg-red-50 active:bg-red-100 transition-colors dark:hover:bg-red-950"
+                                    className="px-3 py-1 text-xs text-red-500 border border-red-200 rounded hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
                                 >
                                     삭제
                                 </button>

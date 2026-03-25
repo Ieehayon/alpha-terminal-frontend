@@ -8,6 +8,7 @@ interface StockSummaryCardProps {
   sentiment?: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL';
   sentiment_score?: number;
   confidence?: number;
+  url?: string;
 }
 
 function tagLabel(tag: Tag): string {
@@ -28,12 +29,21 @@ const SENTIMENT_LABEL = {
 };
 
 export default function StockSummaryCard({
-  symbol, name, summary, tags,
-  sentiment, sentiment_score, confidence,
+  symbol,
+  name,
+  summary,
+  tags,
+  sentiment,
+  sentiment_score,
+  confidence,
+  url,
 }: StockSummaryCardProps) {
-  return (
-    <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-5 flex flex-col gap-3 bg-background">
+  const cardClass =
+    'border border-gray-200 dark:border-gray-700 rounded-xl p-5 flex flex-col gap-3 bg-background' +
+    (url ? ' cursor-pointer hover:border-blue-400 hover:shadow-md transition-all' : '');
 
+  const inner = (
+    <>
       {/* 종목명 + 감성 배지 */}
       <div className="flex items-center justify-between">
         <div className="flex items-baseline gap-2">
@@ -78,6 +88,21 @@ export default function StockSummaryCard({
           <span className="text-xs text-gray-400">{Math.round(confidence * 100)}%</span>
         </div>
       )}
-    </div>
+
+      {/* 원문 링크 힌트 */}
+      {url && (
+        <span className="text-xs text-blue-400 mt-1">원문 보기 →</span>
+      )}
+    </>
   );
+
+  if (url) {
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer" className={cardClass}>
+        {inner}
+      </a>
+    );
+  }
+
+  return <div className={cardClass}>{inner}</div>;
 }

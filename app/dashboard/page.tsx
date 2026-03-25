@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useDashboard } from '@/features/dashboard/application/hooks/useDashboard'
 import { useWatchlist } from '@/features/watchlist/application/hooks/useWatchlist'
 import StockSummaryCard from '../components/StockSummaryCard'
+import { summaryApi, StockSummaryItem } from '@/infrastructure/api/summaryApi'
 
 const MARKET_BADGE: Record<string, string> = {
     KOSPI:  'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
@@ -22,25 +23,98 @@ function MarketBadge({ market }: { market?: string | null }) {
     )
 }
 
+type Tab = 'news' | 'report';
+
 export default function DashboardPage() {
-    const { summaries, isLoading: isSummaryLoading, error: summaryError, pipelineResult, executePipeline } = useDashboard()
+    const { summaries: hookSummaries, isLoading: isSummaryLoading, error: summaryError, pipelineResult, executePipeline } = useDashboard()
     const { items, isLoading: isWatchlistLoading, error: watchlistError } = useWatchlist()
     const [running, setRunning] = useState(false)
+    const [activeTab, setActiveTab] = useState<Tab>('news')
+    const [newsSummaries, setNewsSummaries] = useState<StockSummaryItem[]>([])
+    const [reportSummaries, setReportSummaries] = useState<StockSummaryItem[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+    const [doneMessage, setDoneMessage] = useState<string | null>(null)
+    const [progressMessages, setProgressMessages] = useState<string[]>([])
 
-    const handleRunPipeline = async () => {
-        setRunning(true)
-        await executePipeline()
-        setRunning(false)
-    }
+    useEffect(() => {
+        const fetchSummaries = async () => {
+            setLoading(true)
+            try {
+                const [news, reports] = await Promise.all([
+                    summaryApi.getSummaries(),
+                    summaryApi.getReportSummaries(),
+                ])
+                setNewsSummaries(news)
+                setReportSummaries(reports)
+            } catch (e) {
+                console.error('[summaries] fetch error:', e)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchSummaries()
+    }, [])
 
     const allSkipped = pipelineResult && pipelineResult.processed.every((p) => p.skipped)
 
+    const handleRunPipeline = async () => {
+        setRunning(true)
+        setError(null)
+        setDoneMessage(null)
+        setProgressMessages([])
+
+        // 진행 상황 폴링 시작
+        const pollInterval = setInterval(async () => {
+            try {
+                const progress = await summaryApi.getProgress()
+                setProgressMessages(progress.messages)
+            } catch {
+                // ignore polling errors
+            }
+        }, 1500)
+
+        try {
+            await executePipeline()
+            clearInterval(pollInterval)
+
+            // 완료 후 최종 progress 한 번 더 읽기
+            try {
+                const finalProgress = await summaryApi.getProgress()
+                setProgressMessages(finalProgress.messages)
+            } catch {
+                // ignore
+            }
+
+            const [news, reports] = await Promise.all([
+                summaryApi.getSummaries(),
+                summaryApi.getReportSummaries(),
+            ])
+            setNewsSummaries(news)
+            setReportSummaries(reports)
+            const total = news.length + reports.length
+            if (total > 0) {
+                setDoneMessage(`분석 완료 — 뉴스 ${news.length}건 · 공시·리포트 ${reports.length}건`)
+            } else {
+                setDoneMessage('분석이 완료됐지만 결과가 없습니다. 관심종목을 먼저 추가해주세요.')
+            }
+        } catch (e) {
+            clearInterval(pollInterval)
+            console.error('[pipeline] error:', e)
+            setError((e as Error).message)
+        } finally {
+            setRunning(false)
+        }
+    }
+
+    const displayItems = activeTab === 'news' ? newsSummaries : reportSummaries
+
     return (
         <main className="min-h-screen bg-background text-foreground p-6 md:p-10">
-            <header className="mb-8 flex items-center justify-between">
+            <header className="mb-6 flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold">대시보드</h1>
-                    <p className="text-sm text-gray-500 mt-1">관심종목 요약 정보</p>
+                    <p className="text-sm text-gray-500 mt-1">관심종목 AI 요약</p>
                 </div>
                 <button
                     onClick={handleRunPipeline}
@@ -50,14 +124,40 @@ export default function DashboardPage() {
                     {running && (
                         <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     )}
-                    {running ? 'AI 분석 중... (30초~1분 소요)' : '최신 분석 실행'}
+                    {running ? 'AI 분석 중...' : '최신 분석 실행'}
                 </button>
             </header>
 
-            {/* 실행 중 안내 */}
             {running && (
-                <div className="mb-6 px-4 py-3 bg-blue-50 border border-blue-300 text-blue-700 rounded-lg dark:bg-blue-950 dark:border-blue-700 dark:text-blue-300">
-                    AI가 관심종목 뉴스를 수집하고 분석 중입니다. 잠시만 기다려주세요...
+                <div className="mb-4 px-4 py-3 bg-blue-50 border border-blue-300 text-blue-700 rounded-lg dark:bg-blue-950 dark:border-blue-700 dark:text-blue-300">
+                    <p className="font-medium mb-2">뉴스·공시·재무리포트 수집 및 AI 분석 중...</p>
+                    {progressMessages.length > 0 && (
+                        <ul className="text-xs space-y-1 max-h-32 overflow-y-auto font-mono">
+                            {progressMessages.map((msg, i) => (
+                                <li key={i} className={msg.startsWith('✅') ? 'text-green-600 font-semibold' : ''}>
+                                    {msg}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            )}
+
+            {doneMessage && !running && (
+                <div className="mb-4 px-4 py-3 bg-green-50 border border-green-300 text-green-700 rounded-lg dark:bg-green-950 dark:border-green-700 dark:text-green-300">
+                    {doneMessage}
+                </div>
+            )}
+
+            {error && (
+                <div className="mb-4 px-4 py-3 bg-red-50 border border-red-300 text-red-700 rounded-lg">
+                    오류: {error}
+                </div>
+            )}
+
+            {summaryError && !error && (
+                <div className="mb-4 px-4 py-3 bg-red-50 border border-red-300 text-red-700 rounded-lg">
+                    {summaryError}
                 </div>
             )}
 
@@ -103,12 +203,6 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            {summaryError && (
-                <div className="mb-4 px-4 py-3 bg-red-50 border border-red-300 text-red-700 rounded-lg">
-                    {summaryError}
-                </div>
-            )}
-
             {/* 관심종목 목록 */}
             <section className="mb-10">
                 <h2 className="text-lg font-semibold mb-3">
@@ -151,52 +245,78 @@ export default function DashboardPage() {
                 )}
             </section>
 
+            {/* 탭 */}
+            <div className="flex gap-1 mb-6 border-b border-gray-200 dark:border-gray-700">
+                <button
+                    onClick={() => setActiveTab('news')}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === 'news'
+                            ? 'border-blue-600 text-blue-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                >
+                    뉴스 분석
+                    {newsSummaries.length > 0 && (
+                        <span className="ml-2 px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">
+                            {newsSummaries.length}
+                        </span>
+                    )}
+                </button>
+                <button
+                    onClick={() => setActiveTab('report')}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === 'report'
+                            ? 'border-green-600 text-green-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                >
+                    공시·재무리포트
+                    {reportSummaries.length > 0 && (
+                        <span className="ml-2 px-1.5 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">
+                            {reportSummaries.length}
+                        </span>
+                    )}
+                </button>
+            </div>
+
             {/* AI 분석 요약 */}
             <section>
-                <h2 className="text-lg font-semibold mb-3">AI 분석 요약</h2>
-
-                {isSummaryLoading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="h-40 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" />
-                        ))}
-                    </div>
-                ) : summaries.length === 0 ? (
-                    <div className="py-10 text-center border border-dashed border-gray-300 rounded-lg dark:border-gray-600">
-                        <p className="text-gray-500 mb-4">아직 분석된 종목이 없습니다.</p>
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                            {items.length === 0 ? (
-                                <a
-                                    href="/watchlist"
-                                    className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors"
-                                >
-                                    관심종목 등록하기
-                                </a>
-                            ) : (
-                                <button
-                                    onClick={handleRunPipeline}
-                                    disabled={running}
-                                    className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                                >
-                                    최신 분석 실행
-                                </button>
-                            )}
-                        </div>
+                {loading ? (
+                    <p className="text-gray-500 py-8 text-center">불러오는 중...</p>
+                ) : displayItems.length === 0 ? (
+                    <div className="py-16 text-center text-gray-400">
+                        <p className="text-4xl mb-4">
+                            {activeTab === 'report' ? '📊' : '📰'}
+                        </p>
+                        <p className="text-base font-medium text-gray-500">
+                            {activeTab === 'report' ? '재무리포트 분석 결과가 없습니다.' : '뉴스 분석 결과가 없습니다.'}
+                        </p>
+                        <p className="text-sm mt-2 text-gray-400">
+                            먼저{' '}
+                            <a href="/watchlist" className="text-blue-500 underline">관심종목</a>을 추가한 후
+                            &nbsp;&quot;최신 분석 실행&quot; 버튼을 눌러주세요.
+                        </p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {summaries.map((stock) => (
-                            <StockSummaryCard
-                                key={stock.symbol}
-                                symbol={stock.symbol}
-                                name={stock.name}
-                                summary={stock.summary}
-                                tags={stock.tags}
-                                sentiment={stock.sentiment}
-                                sentiment_score={stock.sentiment_score}
-                                confidence={stock.confidence}
-                            />
-                        ))}
+                        {displayItems.map((stock) => {
+                            const fallbackUrl = stock.source_type === 'NEWS'
+                                ? `https://finance.naver.com/item/news.nhn?code=${stock.symbol}`
+                                : `https://dart.fss.or.kr/dsab001/main.do?textCrpNm=${encodeURIComponent(stock.name)}&currentPage=1&maxResults=15&sort=date&series=desc`
+                            return (
+                                <StockSummaryCard
+                                    key={`${stock.symbol}-${stock.source_type}`}
+                                    symbol={stock.symbol}
+                                    name={stock.name}
+                                    summary={stock.summary}
+                                    tags={stock.tags}
+                                    sentiment={stock.sentiment}
+                                    sentiment_score={stock.sentiment_score}
+                                    confidence={stock.confidence}
+                                    url={stock.url || fallbackUrl}
+                                />
+                            )
+                        })}
                     </div>
                 )}
             </section>
