@@ -29,7 +29,7 @@ function SharedCardItem({ card, onReload }: { card: SharedCard; onReload: () => 
     const [deleting, setDeleting] = useState(false)
 
     const isOwner = card.sharer_account_id !== null &&
-        card.sharer_account_id === getAccountIdCookie()
+        card.sharer_account_id === Number(getAccountIdCookie())
 
     const handleCommentSubmit = async (content: string, nickname: string) => {
         await handleAddComment(content, nickname)
@@ -121,7 +121,14 @@ export function SharedCardFeed() {
         )
     }
 
-    if (error || cards.length === 0) return null
+    if (error) return (
+        <section className="mt-8">
+            <h2 className="mb-3 text-base font-semibold text-gray-200">공유된 AI 분석</h2>
+            <p className="text-sm text-gray-500">공유 카드를 불러오지 못했습니다.</p>
+        </section>
+    )
+
+    if (cards.length === 0) return null
 
     return (
         <section className="mt-8">

@@ -4,13 +4,15 @@ import { useEffect, useState } from "react"
 import { ApiError } from "@/infrastructure/http/apiError"
 import { fetchAnalysisLogs } from "@/features/dashboard/infrastructure/api/dashboardApi"
 import { calcHomeStats } from "../../domain/selectors/homeSelectors"
+import { calcTodayBriefing } from "../../domain/selectors/todayBriefingSelectors"
 import type { HomeStats } from "../../domain/model/homeStats"
+import type { TodayBriefing } from "../../domain/model/todayBriefing"
 
 type HomeState =
     | { status: "LOADING" }
     | { status: "UNAUTHENTICATED" }
     | { status: "EMPTY" }
-    | { status: "READY"; stats: HomeStats }
+    | { status: "READY"; stats: HomeStats; briefing: TodayBriefing }
     | { status: "ERROR"; message: string }
 
 export function useHome(): HomeState {
@@ -22,7 +24,11 @@ export function useHome(): HomeState {
                 if (logs.length === 0) {
                     setState({ status: "EMPTY" })
                 } else {
-                    setState({ status: "READY", stats: calcHomeStats(logs) })
+                    setState({
+                        status: "READY",
+                        stats: calcHomeStats(logs),
+                        briefing: calcTodayBriefing(logs),
+                    })
                 }
             })
             .catch((err) => {

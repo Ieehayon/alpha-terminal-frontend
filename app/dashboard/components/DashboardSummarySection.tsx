@@ -126,6 +126,7 @@ export function DashboardSummarySection({
                                     sentiment={stock.sentiment}
                                     sentiment_score={stock.sentiment_score}
                                     confidence={stock.confidence}
+                                    source_type={stock.source_type}
                                     url={stock.url}
                                     heatmap={hi ? { item: hi, weeks: heatmapWeeks } : undefined}
                                     analyzed_at={stock.analyzed_at}

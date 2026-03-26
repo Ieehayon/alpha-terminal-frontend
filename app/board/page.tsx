@@ -53,7 +53,7 @@ export default function BoardPage() {
                             {items.map((post) => (
                                 <li key={post.board_id}>
                                     <Link
-                                        href={`/board/${post.board_id}`}
+                                        href={`/board/read/${post.board_id}`}
                                         className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                                     >
                                         <div className="min-w-0">

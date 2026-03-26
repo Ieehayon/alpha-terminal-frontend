@@ -11,7 +11,21 @@ export async function fetchBoardPost(boardId: number): Promise<BoardListItem> {
     return res.json()
 }
 
+export async function fetchBoardRead(boardId: number): Promise<BoardListItem> {
+    const res = await httpClient.get(`/board/read/${boardId}`)
+    return res.json()
+}
+
 export async function createBoardPost(title: string, content: string): Promise<BoardListItem> {
     const res = await httpClient.post("/board", { title, content })
     return res.json()
+}
+
+export async function updateBoardPost(boardId: number, title: string, content: string): Promise<BoardListItem> {
+    const res = await httpClient.put(`/board/${boardId}`, { title, content })
+    return res.json()
+}
+
+export async function deleteBoardPost(boardId: number): Promise<void> {
+    await httpClient.delete(`/board/delete/${boardId}`)
 }

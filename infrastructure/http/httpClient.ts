@@ -25,6 +25,16 @@ export const httpClient = {
         return ensureOk(res)
     },
 
+    put: async (path: string, body?: unknown) => {
+        const res = await fetch(`${env.apiBaseUrl}${path}`, {
+            method: "PUT",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: body !== undefined ? JSON.stringify(body) : undefined,
+        })
+        return ensureOk(res)
+    },
+
     delete: async (path: string) => {
         const res = await fetch(`${env.apiBaseUrl}${path}`, {
             method: "DELETE",

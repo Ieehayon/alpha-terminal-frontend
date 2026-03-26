@@ -9,6 +9,17 @@ import type { HeatmapItem } from "@/features/stock/domain/model/dailyReturnsHeat
 import { useClientPagination } from "@/features/shared/application/hooks/useClientPagination"
 import { SENTIMENT_BADGE, formatAnalyzedAt } from "./dashboardBadges"
 
+const SOURCE_LABEL: Record<string, string> = {
+    NEWS: '뉴스',
+    DISCLOSURE: '공시',
+    REPORT: '재무',
+}
+const SOURCE_STYLE: Record<string, string> = {
+    NEWS: 'bg-sky-50 text-sky-600 dark:bg-sky-950 dark:text-sky-400',
+    DISCLOSURE: 'bg-orange-50 text-orange-600 dark:bg-orange-950 dark:text-orange-400',
+    REPORT: 'bg-purple-50 text-purple-600 dark:bg-purple-950 dark:text-purple-400',
+}
+
 type Props = {
     analysisLogs: AnalysisLog[]
     /** API에서 받은 원본 로그 개수(요약과 중복 숨김으로 목록이 비었을 때 안내) */
@@ -114,6 +125,11 @@ export function DashboardAnalysisLogsSection({
                                             {log.symbol}
                                         </span>
                                         <span className="text-sm font-medium">{log.name}</span>
+                                        {log.source_type && SOURCE_LABEL[log.source_type] && (
+                                            <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${SOURCE_STYLE[log.source_type]}`}>
+                                                {SOURCE_LABEL[log.source_type]}
+                                            </span>
+                                        )}
                                         <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${sentimentClass}`}>
                                             {log.sentiment}
                                         </span>

@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useHome } from "@/features/home/application/hooks/useHome"
 import { HomeAlphaTopPicks } from "@/app/components/HomeAlphaTopPicks"
 import { HomeSentimentGauge } from "@/app/components/HomeSentimentGauge"
+import { HomeTodayBriefing } from "@/app/components/HomeTodayBriefing"
 import { SharedCardFeed } from "@/features/share/ui/components/SharedCardFeed"
 
 function Skeleton() {
@@ -68,6 +69,7 @@ export default function Home() {
 
             {state.status === "READY" && (
                 <div className="space-y-4">
+                    <HomeTodayBriefing briefing={state.briefing} />
                     <HomeSentimentGauge
                         gauge={state.stats.gauge}
                         distribution={state.stats.distribution}
