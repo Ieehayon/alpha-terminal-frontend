@@ -9,6 +9,8 @@ import MobileNavBar from "@/ui/layout/MobileNavBar"
 export default function ClientShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
 
+    if (pathname === "/") return <>{children}</>
+
     return (
         <>
             <TopBar />
