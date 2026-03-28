@@ -118,7 +118,7 @@ export default function LandingPage() {
     const isLoggedIn = state.status === "AUTHENTICATED"
 
     if (state.status === "LOADING" || isLoggedIn) {
-        return <div className="h-full bg-inverse-surface" />
+        return <div className="h-full bg-background" />
     }
 
     return (

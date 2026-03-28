@@ -8,7 +8,7 @@ const NAV_ITEMS = [
     { href: "/watchlist", label: "WATCH", icon: "visibility" },
     { href: "/board", label: "BOARD", icon: "forum" },
     { href: "/youtube", label: "VIDEO", icon: "play_circle" },
-    { href: "/", label: "FEED", icon: "newspaper", exact: true },
+    { href: "/stock", label: "STOCK", icon: "search" },
 ]
 
 export default function MobileNavBar() {
@@ -23,7 +23,7 @@ export default function MobileNavBar() {
                 <Link
                     key={href}
                     href={href}
-                    className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 font-mono text-[9px] uppercase tracking-wider transition-none ${
+                    className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 font-mono text-[10px] uppercase tracking-wider transition-none ${
                         isActive(href, exact)
                             ? "text-primary font-bold bg-primary/15 border-t-2 border-primary"
                             : "text-on-surface"
