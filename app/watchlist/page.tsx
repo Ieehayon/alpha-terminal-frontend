@@ -32,6 +32,7 @@ export default function WatchlistPage() {
     const { items, isLoading, error, add, remove } = useWatchlist()
     const { results, isLoading: isSearching, error: searchError, query, search, clear } = useStockSearch()
     const [registering, setRegistering] = useState<string | null>(null)
+    const [deleteTarget, setDeleteTarget] = useState<{ id: number; symbol: string; name: string } | null>(null)
 
     const watchlistSymbols = useMemo(() => items.map((i) => i.symbol), [items])
     const { bySymbol: heatmapBySymbol, data: heatmapData } = useDailyReturnsHeatmap(watchlistSymbols, 6)
@@ -80,7 +81,7 @@ export default function WatchlistPage() {
                     STOCK_SEARCH
                 </div>
                 <div className="relative">
-                    <div className="flex items-center gap-2 px-3 py-2.5 border border-outline bg-surface-container-low focus-within:border-primary">
+                    <div className="flex items-center gap-2 px-3 py-2.5 border border-outline bg-surface-container-lowest focus-within:border-primary">
                         <span className="material-symbols-outlined text-[18px] text-outline shrink-0">search</span>
                         <input
                             type="text"
@@ -104,14 +105,14 @@ export default function WatchlistPage() {
 
                     {/* 검색 드롭다운 */}
                     {results.length > 0 && (
-                        <ul className="absolute z-10 w-full mt-0 bg-surface-container-low border border-outline shadow-sm max-h-64 overflow-y-auto">
+                        <ul className="absolute z-50 w-full mt-0 bg-surface-container-lowest border border-primary/40 shadow-[0_4px_24px_rgba(0,0,0,0.5)] max-h-64 overflow-y-auto">
                             {results.map((item) => (
                                 <li key={item.symbol} className="border-b border-outline-variant last:border-b-0">
                                     <button
                                         type="button"
                                         onClick={() => handleRegister(item)}
                                         disabled={registering === item.symbol}
-                                        className="w-full flex items-center justify-between px-3 py-3 hover:bg-surface-container text-left disabled:opacity-50"
+                                        className="w-full flex items-center justify-between px-3 py-3 hover:bg-primary/15 text-left disabled:opacity-50"
                                     >
                                         <div className="flex items-center gap-3">
                                             <span className="font-mono text-xs text-outline w-16">{item.symbol}</span>
@@ -186,7 +187,7 @@ export default function WatchlistPage() {
                                         </div>
                                         <button
                                             type="button"
-                                            onClick={() => remove(item.id)}
+                                            onClick={() => setDeleteTarget({ id: item.id, symbol: item.symbol, name: item.name })}
                                             className="font-mono text-sm text-error border border-outline px-3 py-1.5 hover:bg-error hover:text-white hover:border-error uppercase"
                                         >
                                             DEL
@@ -209,6 +210,48 @@ export default function WatchlistPage() {
                     </>
                 )}
             </section>
+
+            {/* 삭제 확인 모달 */}
+            {deleteTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    <button
+                        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                        onClick={() => setDeleteTarget(null)}
+                        aria-label="닫기"
+                    />
+                    <div className="relative z-10 w-full max-w-sm mx-4 border border-primary/40 bg-surface-container-lowest p-6 shadow-[0_0_40px_rgba(0,1,187,0.15)]">
+                        <div className="font-mono text-xs font-bold text-error uppercase tracking-widest mb-4">
+                            ⚠ CONFIRM_DELETE
+                        </div>
+                        <div className="font-mono text-sm text-on-surface mb-1">
+                            다음 종목을 관심목록에서 삭제합니다.
+                        </div>
+                        <div className="font-mono text-sm text-on-surface-variant border border-outline-variant px-3 py-2 mb-5">
+                            <span className="text-outline mr-2">{deleteTarget.symbol}</span>
+                            <span className="font-bold text-on-surface">{deleteTarget.name}</span>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setDeleteTarget(null)}
+                                className="flex-1 font-mono text-sm border border-outline-variant px-3 py-2 text-on-surface-variant hover:bg-surface-container-high uppercase"
+                            >
+                                CANCEL
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    remove(deleteTarget.id)
+                                    setDeleteTarget(null)
+                                }}
+                                className="flex-1 font-mono text-sm border border-error bg-error text-white px-3 py-2 hover:opacity-90 uppercase font-bold"
+                            >
+                                DELETE
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </main>
     )
 }

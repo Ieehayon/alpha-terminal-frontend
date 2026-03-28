@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useCallback, useEffect } from "react"
 import { useAuth } from "@/features/auth/application/hooks/useAuth"
+import { useTheme } from "@/features/theme/application/hooks/useTheme"
 
 const NAV_ITEMS = [
     { href: "/dashboard", label: "DASHBOARD" },
@@ -16,6 +17,7 @@ export default function TopBar() {
     const { state, logout, loadUser } = useAuth()
     const router = useRouter()
     const pathname = usePathname()
+    const { theme, toggle } = useTheme()
 
     const isLoggedIn = state.status === "AUTHENTICATED"
 
@@ -29,11 +31,11 @@ export default function TopBar() {
     }, [logout, router])
 
     return (
-        <header className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center w-full px-2 h-10 bg-[#f9f9f9] border-b border-outline">
+        <header className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center w-full px-2 h-10 bg-inverse-surface border-b border-outline">
             <div className="flex items-center gap-6">
                 <Link
                     href="/"
-                    className="text-lg font-black tracking-tighter text-primary font-headline uppercase"
+                    className="text-lg font-black tracking-tighter text-inverse-primary font-headline uppercase"
                 >
                     ALPHA_DESK
                 </Link>
@@ -45,8 +47,8 @@ export default function TopBar() {
                             href={href}
                             className={
                                 pathname.startsWith(href)
-                                    ? "text-primary border-b-2 border-primary pb-1"
-                                    : "text-on-surface opacity-80 hover:bg-surface-container transition-none px-1"
+                                    ? "text-white border-b-2 border-inverse-primary pb-1"
+                                    : "text-inverse-on-surface opacity-70 hover:text-white transition-none px-1"
                             }
                         >
                             {label}
@@ -55,9 +57,20 @@ export default function TopBar() {
                 </nav>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+                <button
+                    type="button"
+                    onClick={toggle}
+                    className="border border-outline-variant font-mono text-[10px] text-inverse-on-surface px-1.5 py-0.5 hover:text-white hover:border-inverse-primary transition-none uppercase cursor-pointer"
+                    title={theme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환"}
+                >
+                    <span className="material-symbols-outlined text-[14px]">
+                        {theme === "dark" ? "light_mode" : "dark_mode"}
+                    </span>
+                </button>
+
                 {isLoggedIn && state.status === "AUTHENTICATED" && (
-                    <span className="hidden sm:block font-mono text-[10px] text-on-surface-variant uppercase tracking-widest">
+                    <span className="font-mono text-[10px] text-inverse-on-surface opacity-70 uppercase tracking-widest max-w-[80px] sm:max-w-none truncate">
                         {state.user.nickname}
                     </span>
                 )}
@@ -66,7 +79,7 @@ export default function TopBar() {
                     <button
                         type="button"
                         onClick={handleLogout}
-                        className="border border-outline font-mono text-[10px] px-2 py-0.5 hover:bg-error hover:text-white hover:border-error transition-none uppercase cursor-pointer"
+                        className="border border-outline-variant font-mono text-[10px] text-inverse-on-surface px-2 py-0.5 hover:bg-error hover:text-white hover:border-error transition-none uppercase cursor-pointer"
                     >
                         SYS_LOGOUT
                     </button>

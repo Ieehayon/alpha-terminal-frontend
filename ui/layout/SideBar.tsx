@@ -31,7 +31,7 @@ export default function SideBar() {
                         href={href}
                         className={`p-2 w-full flex items-center gap-2 font-mono uppercase text-[11px] leading-tight transition-none ${
                             isActive(href, exact)
-                                ? "bg-primary text-white font-bold"
+                                ? "bg-primary/15 text-primary font-bold border-l-3 border-primary border-b border-outline-variant/30"
                                 : "text-on-surface border-b border-outline-variant/30 hover:bg-surface-container-high"
                         }`}
                     >
@@ -41,9 +41,9 @@ export default function SideBar() {
                 ))}
             </nav>
 
-            <div className="p-2 border-t border-outline font-mono text-[9px] text-on-surface-variant">
-                UPTIME: 99.99%<br />
-                LOC: SEOUL_HQ
+            <div className="p-3 pb-8 border-t border-outline font-mono text-[9px] text-on-surface-variant leading-relaxed">
+                <div>UPTIME: 99.99%</div>
+                <div>LOC: SEOUL_HQ</div>
             </div>
         </aside>
     )

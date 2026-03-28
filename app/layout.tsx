@@ -4,6 +4,7 @@ import "./globals.css"
 import JotaiProvider from "@/components/JotaiProvider"
 import AuthProvider from "@/components/AuthProvider"
 import ClientShell from "@/components/ClientShell"
+import { KakaoSDKLoader } from "@/features/share/ui/components/KakaoSDKLoader"
 
 const spaceGrotesk = Space_Grotesk({
     variable: "--font-space-grotesk",
@@ -33,16 +34,22 @@ export default function RootLayout({
     children: React.ReactNode
 }>) {
     return (
-        <html lang="ko" className="h-full overflow-hidden">
+        <html lang="ko" className="h-full overflow-hidden" suppressHydrationWarning>
             <head>
                 <link
                     rel="stylesheet"
                     href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
                 />
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `(function(){var t=localStorage.getItem("alpha-desk-theme");document.documentElement.setAttribute("data-theme",t==="light"?"light":"dark")})()`,
+                    }}
+                />
             </head>
             <body className={`${spaceGrotesk.variable} ${ibmPlexMono.variable} ${inter.variable} h-full overflow-hidden`}>
                 <JotaiProvider>
                     <AuthProvider>
+                        <KakaoSDKLoader />
                         <ClientShell>
                             {children}
                         </ClientShell>

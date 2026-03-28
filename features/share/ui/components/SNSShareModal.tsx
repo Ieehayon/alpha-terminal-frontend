@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { env } from "@/infrastructure/config/env"
 
 interface Props {
     open: boolean
@@ -13,18 +14,16 @@ interface Props {
 
 export function SNSShareModal({ open, onClose, cardId, symbol, name, summary }: Props) {
     const [copied, setCopied] = useState(false)
-    const [instaCopied, setInstaCopied] = useState(false)
 
     if (!open) return null
 
-    const shareUrl =
-        typeof window !== "undefined"
-            ? `${window.location.origin}/share/${cardId}`
-            : `/share/${cardId}`
-
+    const baseUrl = env.shareBaseUrl || (typeof window !== "undefined" ? window.location.origin : "")
+    const shareUrl = `${baseUrl}/share/${cardId}`
     const shareText = `[Alpha Desk AI 분석] ${symbol} ${name}\n${summary.slice(0, 80)}...`
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`
-    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`
+    const shareTitle = `${symbol} ${name} AI 분석`
+
+    // OG 이미지 URL
+    const ogImageUrl = `${baseUrl}/api/og?${new URLSearchParams({ symbol, name, summary: summary.slice(0, 200) })}`
 
     const handleCopy = async () => {
         try {
@@ -36,21 +35,43 @@ export function SNSShareModal({ open, onClose, cardId, symbol, name, summary }: 
         }
     }
 
-    // 인스타그램은 웹 공유 URL이 없음 → 링크 복사 후 붙여넣기 안내
-    const handleInstaCopy = async () => {
-        try {
-            await navigator.clipboard.writeText(shareUrl)
-            setInstaCopied(true)
-            setTimeout(() => setInstaCopied(false), 3000)
-        } catch {
-            // fallback
+    const handleKakaoTalk = () => {
+        if (!window.Kakao?.isInitialized()) {
+            alert("카카오 SDK가 초기화되지 않았습니다.")
+            return
         }
+        window.Kakao.Share.sendDefault({
+            objectType: "feed",
+            content: {
+                title: shareTitle,
+                description: summary.slice(0, 100),
+                imageUrl: ogImageUrl,
+                link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
+            },
+            buttons: [
+                {
+                    title: "분석 결과 보기",
+                    link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
+                },
+            ],
+        })
     }
+
+    const handleKakaoStory = () => {
+        window.open(
+            `https://story.kakao.com/share?url=${encodeURIComponent(shareUrl)}`,
+            "_blank",
+        )
+    }
+
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`
+    const naverBlogUrl = `https://blog.naver.com/openapi/share?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(shareTitle)}`
 
     const handleNativeShare = async () => {
         if (navigator.share) {
             try {
-                await navigator.share({ title: `${symbol} ${name} AI 분석`, text: shareText, url: shareUrl })
+                await navigator.share({ title: shareTitle, text: shareText, url: shareUrl })
             } catch {
                 // 취소
             }
@@ -58,27 +79,12 @@ export function SNSShareModal({ open, onClose, cardId, symbol, name, summary }: 
     }
 
     const options = [
-        {
-            label: copied ? "복사됨 ✓" : "링크 복사",
-            icon: "🔗",
-            action: handleCopy,
-        },
-        {
-            label: "Twitter / X",
-            icon: "🐦",
-            action: () => window.open(twitterUrl, "_blank"),
-        },
-        {
-            label: "Facebook",
-            icon: "📘",
-            action: () => window.open(facebookUrl, "_blank"),
-        },
-        {
-            label: instaCopied ? "링크 복사됨 ✓" : "Instagram",
-            icon: "📸",
-            action: handleInstaCopy,
-            note: instaCopied ? "Instagram에 붙여넣기 하세요" : undefined,
-        },
+        { label: copied ? "복사됨 ✓" : "링크 복사", icon: "🔗", action: handleCopy },
+        { label: "카카오톡", icon: "💬", action: handleKakaoTalk },
+        { label: "카카오스토리", icon: "📒", action: handleKakaoStory },
+        { label: "Twitter / X", icon: "🐦", action: () => window.open(twitterUrl, "_blank") },
+        { label: "Facebook", icon: "📘", action: () => window.open(facebookUrl, "_blank") },
+        { label: "네이버 블로그", icon: "📗", action: () => window.open(naverBlogUrl, "_blank") },
         ...(typeof navigator !== "undefined" && "share" in navigator
             ? [{ label: "더 보기...", icon: "↗️", action: handleNativeShare }]
             : []),
@@ -106,17 +112,12 @@ export function SNSShareModal({ open, onClose, cardId, symbol, name, summary }: 
                 <div className="grid grid-cols-2 gap-2">
                     {options.map((opt) => (
                         <button
-                            key={opt.icon}
+                            key={opt.label}
                             onClick={opt.action}
-                            className="flex flex-col items-start gap-0.5 rounded-lg bg-gray-800 px-3 py-3 text-sm text-gray-200 transition hover:bg-gray-700"
+                            className="flex items-center gap-2 rounded-lg bg-gray-800 px-3 py-3 text-sm text-gray-200 transition hover:bg-gray-700"
                         >
-                            <div className="flex items-center gap-2">
-                                <span>{opt.icon}</span>
-                                <span>{opt.label}</span>
-                            </div>
-                            {"note" in opt && opt.note && (
-                                <span className="text-xs text-green-400 pl-6">{opt.note}</span>
-                            )}
+                            <span>{opt.icon}</span>
+                            <span>{opt.label}</span>
                         </button>
                     ))}
                 </div>

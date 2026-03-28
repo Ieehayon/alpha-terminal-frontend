@@ -8,6 +8,7 @@ interface Props {
 
 // SSR에서는 상대 경로 불가 → 백엔드 직접 호출
 const SSR_API_BASE = process.env.INTERNAL_API_URL ?? "http://localhost:33333"
+const SHARE_BASE = process.env.NEXT_PUBLIC_SHARE_BASE_URL ?? "http://localhost:3000"
 
 async function fetchCard(cardId: string) {
     try {
@@ -35,6 +36,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const title = `[Alpha Desk] ${card.symbol} ${card.name} AI 분석`
     const description = `${sentimentLabel[card.sentiment] ?? ""} ${card.sentiment_score > 0 ? "+" : ""}${card.sentiment_score.toFixed(2)} | ${card.summary.slice(0, 100)}...`
 
+    const ogImageParams = new URLSearchParams({
+        symbol: card.symbol,
+        name: card.name,
+        summary: card.summary.slice(0, 200),
+        sentiment: card.sentiment,
+        score: String(card.sentiment_score),
+        confidence: String(card.confidence),
+    })
+    const ogImageUrl = `${SHARE_BASE}/api/og?${ogImageParams}`
+    const shareUrl = `${SHARE_BASE}/share/${cardId}`
+
     return {
         title,
         description,
@@ -43,11 +55,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             description,
             type: "article",
             siteName: "Alpha Desk",
+            url: shareUrl,
+            images: [{ url: ogImageUrl, width: 1200, height: 630, alt: title }],
         },
         twitter: {
-            card: "summary",
+            card: "summary_large_image",
             title,
             description,
+            images: [ogImageUrl],
         },
     }
 }

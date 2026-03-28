@@ -2,6 +2,7 @@
 
 import { useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/features/auth/application/hooks/useAuth"
 
 const HOW_IT_WORKS = [
@@ -101,13 +102,24 @@ const SENTIMENT_LABEL: Record<string, string> = {
 }
 
 export default function LandingPage() {
+    const router = useRouter()
     const { state, loadUser } = useAuth()
 
     useEffect(() => {
         loadUser()
     }, [loadUser])
 
+    useEffect(() => {
+        if (state.status === "AUTHENTICATED") {
+            router.push("/dashboard")
+        }
+    }, [state.status, router])
+
     const isLoggedIn = state.status === "AUTHENTICATED"
+
+    if (state.status === "LOADING" || isLoggedIn) {
+        return <div className="h-full bg-inverse-surface" />
+    }
 
     return (
         <div className="h-full overflow-y-auto bg-[#d1d1d1] font-body text-on-surface">

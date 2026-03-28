@@ -64,7 +64,7 @@ export function ShareActionBar({
 
     return (
         <>
-            <div className="flex items-center gap-4 border-t border-gray-700 pt-3 mt-3">
+            <div className="flex items-center gap-4 border-t border-outline pt-3 mt-1">
                 {/* 좋아요 */}
                 <button
                     onClick={() => cardId && handleLike()}

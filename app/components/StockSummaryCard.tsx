@@ -146,7 +146,7 @@ export default function StockSummaryCard({
       )}
 
       {analyzed_at && (
-        <div className="border-t border-outline px-5 pb-4 pt-0">
+        <div className="px-5 pb-4 pt-0">
           <ShareActionBar
             sharePayload={{
               symbol, name, summary,

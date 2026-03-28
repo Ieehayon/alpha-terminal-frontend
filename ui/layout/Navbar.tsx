@@ -91,6 +91,9 @@ export default function Navbar() {
                     <Link href="/board" className={menuItemClass("/board")}>
                         게시판
                     </Link>
+                    <Link href="/youtube" className={menuItemClass("/youtube")}>
+                        영상
+                    </Link>
 
                     {!isLoading &&
                         (isLoggedIn ? (
@@ -203,6 +206,13 @@ export default function Navbar() {
                                 onClick={closeMobile}
                             >
                                 게시판
+                            </Link>
+                            <Link
+                                href="/youtube"
+                                className={drawerLinkClass("/youtube")}
+                                onClick={closeMobile}
+                            >
+                                영상
                             </Link>
 
                             {state.status === "AUTHENTICATED" && (
