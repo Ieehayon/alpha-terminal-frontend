@@ -1,18 +1,25 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import type { ShareCardPayload } from "../../domain/model/sharedCard"
 import { useCardActions } from "../../application/hooks/useCardActions"
 import { shareCard } from "../../infrastructure/api/shareApi"
+import { createBoardPost } from "@/features/board/infrastructure/api/boardApi"
 import { CommentModal } from "./CommentModal"
 import { SNSShareModal } from "./SNSShareModal"
 
 interface Props {
-    cardId?: number           // 이미 공유된 카드 ID (홈 피드 등)
-    sharePayload?: ShareCardPayload  // 공유할 데이터 (대시보드 카드)
+    cardId?: number
+    sharePayload?: ShareCardPayload
     initialLikeCount?: number
     initialCommentCount?: number
+    initialUserHasLiked?: boolean
     isLoggedIn?: boolean
+    /** false면 SNS·링크 공유 버튼 숨김 (게시판 열람자 등) */
+    snsShareEnabled?: boolean
+    /** true면 대시보드 등에서 게시판 등록 버튼 표시 */
+    showBoardPublish?: boolean
 }
 
 export function ShareActionBar({
@@ -20,14 +27,25 @@ export function ShareActionBar({
     sharePayload,
     initialLikeCount = 0,
     initialCommentCount = 0,
+    initialUserHasLiked = false,
     isLoggedIn = false,
+    snsShareEnabled = true,
+    showBoardPublish = false,
 }: Props) {
+    const router = useRouter()
     const [cardId, setCardId] = useState<number | undefined>(initialCardId)
+
+    useEffect(() => {
+        setCardId(initialCardId)
+    }, [initialCardId])
     const [sharing, setSharing] = useState(false)
+    const [publishingBoard, setPublishingBoard] = useState(false)
     const [shareError, setShareError] = useState<string | null>(null)
+    const [boardError, setBoardError] = useState<string | null>(null)
     const [commentOpen, setCommentOpen] = useState(false)
     const [shareModalOpen, setShareModalOpen] = useState(false)
 
+    const effectiveCardId = cardId ?? -1
     const {
         likeCount,
         liked,
@@ -37,7 +55,12 @@ export function ShareActionBar({
         commentLoading,
         loadComments,
         handleAddComment,
-    } = useCardActions(cardId ?? -1, initialLikeCount)
+    } = useCardActions(
+        effectiveCardId,
+        initialLikeCount,
+        initialUserHasLiked,
+        initialCommentCount
+    )
 
     const handleShare = async () => {
         if (!isLoggedIn) {
@@ -62,11 +85,41 @@ export function ShareActionBar({
         }
     }
 
+    const handlePublishToBoard = async () => {
+        if (!isLoggedIn) {
+            alert("로그인 후 게시판에 올릴 수 있습니다.")
+            return
+        }
+        if (!sharePayload) return
+        setPublishingBoard(true)
+        setBoardError(null)
+        try {
+            let cid = cardId
+            if (!cid) {
+                const shared = await shareCard(sharePayload)
+                cid = shared.id
+                setCardId(shared.id)
+            }
+            const title = `[AI 분석] ${sharePayload.symbol} ${sharePayload.name}`.slice(0, 200)
+            const content =
+                sharePayload.summary.trim() ||
+                `${sharePayload.symbol} AI 분석 요약이 없습니다. 아래 카드에서 확인하세요.`
+            const created = await createBoardPost(title, content, cid)
+            router.push(`/board/read/${created.board_id}`)
+        } catch (e) {
+            setBoardError(e instanceof Error ? e.message : "게시판 등록에 실패했습니다.")
+        } finally {
+            setPublishingBoard(false)
+        }
+    }
+
+    const canOpenSnsModal = Boolean(cardId && sharePayload && snsShareEnabled)
+
     return (
         <>
-            <div className="flex items-center gap-4 border-t border-outline pt-3 mt-1">
-                {/* 좋아요 */}
+            <div className="flex flex-wrap items-center gap-4 border-t border-outline pt-3 mt-1">
                 <button
+                    type="button"
                     onClick={() => cardId && handleLike()}
                     disabled={!cardId}
                     className={`flex items-center gap-1.5 text-sm transition ${
@@ -80,8 +133,8 @@ export function ShareActionBar({
                     <span>{likeCount}</span>
                 </button>
 
-                {/* 댓글 */}
                 <button
+                    type="button"
                     onClick={() => {
                         if (!cardId) return
                         setCommentOpen(true)
@@ -94,20 +147,38 @@ export function ShareActionBar({
                     <span>{cardId ? commentCount : initialCommentCount}</span>
                 </button>
 
-                {/* 공유 */}
-                <button
-                    onClick={handleShare}
-                    disabled={sharing}
-                    className="ml-auto flex items-center gap-1.5 text-sm text-gray-400 hover:text-green-400 transition disabled:opacity-40"
-                    aria-label="공유"
-                >
-                    <span className="text-base">↗️</span>
-                    <span>{sharing ? "공유 중..." : cardId ? "공유됨" : "공유하기"}</span>
-                </button>
+                {snsShareEnabled && (
+                    <button
+                        type="button"
+                        onClick={handleShare}
+                        disabled={sharing}
+                        className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-green-400 transition disabled:opacity-40"
+                        aria-label="SNS 공유"
+                    >
+                        <span className="text-base">↗️</span>
+                        <span>{sharing ? "공유 중..." : "공유하기"}</span>
+                    </button>
+                )}
+
+                {showBoardPublish && (
+                    <button
+                        type="button"
+                        onClick={handlePublishToBoard}
+                        disabled={publishingBoard}
+                        className="ml-auto sm:ml-0 flex items-center gap-1.5 text-sm text-gray-400 hover:text-amber-300 transition disabled:opacity-40"
+                        aria-label="게시판에 올리기"
+                    >
+                        <span className="text-base">📋</span>
+                        <span>{publishingBoard ? "등록 중..." : "게시판에 올리기"}</span>
+                    </button>
+                )}
             </div>
 
             {shareError && (
                 <p className="mt-1 text-xs text-red-400">{shareError}</p>
+            )}
+            {boardError && (
+                <p className="mt-1 text-xs text-red-400">{boardError}</p>
             )}
 
             {commentOpen && cardId && (
@@ -122,7 +193,7 @@ export function ShareActionBar({
                 />
             )}
 
-            {shareModalOpen && cardId && sharePayload && (
+            {shareModalOpen && canOpenSnsModal && cardId && sharePayload && (
                 <SNSShareModal
                     open={shareModalOpen}
                     onClose={() => setShareModalOpen(false)}

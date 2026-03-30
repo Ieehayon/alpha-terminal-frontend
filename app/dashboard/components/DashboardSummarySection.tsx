@@ -134,6 +134,7 @@ export function DashboardSummarySection({
                                     heatmap={hi ? { item: hi, weeks: heatmapWeeks } : undefined}
                                     analyzed_at={stock.analyzed_at}
                                     isLoggedIn={isLoggedIn}
+                                    showBoardPublishButton={isLoggedIn}
                                 />
                             )
                         })}

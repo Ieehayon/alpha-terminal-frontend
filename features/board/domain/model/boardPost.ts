@@ -13,6 +13,7 @@ export interface BoardListItem {
     nickname: string
     created_at: string
     updated_at: string
+    shared_card_id?: number | null
 }
 
 export interface BoardListResponse {

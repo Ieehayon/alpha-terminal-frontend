@@ -21,6 +21,15 @@ interface StockSummaryCardProps {
   heatmap?: { item: HeatmapItem; weeks: number; asOf?: string | null }
   analyzed_at?: string
   isLoggedIn?: boolean
+  /** 이미 공유된 카드 ID (게시판 연동 읽기 등) */
+  sharedCardId?: number
+  sharedCardLikeCount?: number
+  sharedCardCommentCount?: number
+  initialUserHasLiked?: boolean
+  /** false면 SNS 공유 버튼 숨김 */
+  snsShareEnabled?: boolean
+  /** 대시보드 등에서 게시판 등록 버튼 */
+  showBoardPublishButton?: boolean
 }
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -54,6 +63,12 @@ export default function StockSummaryCard({
   heatmap,
   analyzed_at,
   isLoggedIn = false,
+  sharedCardId,
+  sharedCardLikeCount = 0,
+  sharedCardCommentCount = 0,
+  initialUserHasLiked = false,
+  snsShareEnabled = true,
+  showBoardPublishButton = false,
 }: StockSummaryCardProps) {
   const sentimentStyle = sentiment ? SENTIMENT_STYLE[sentiment] : SENTIMENT_STYLE.NEUTRAL
   const sentimentLabel = sentiment ? SENTIMENT_LABEL[sentiment] : '중립'
@@ -148,6 +163,7 @@ export default function StockSummaryCard({
       {analyzed_at && (
         <div className="px-5 pb-4 pt-0">
           <ShareActionBar
+            cardId={sharedCardId}
             sharePayload={{
               symbol, name, summary,
               tags: tags.map(tagLabel),
@@ -158,7 +174,12 @@ export default function StockSummaryCard({
               url,
               analyzed_at,
             } satisfies ShareCardPayload}
+            initialLikeCount={sharedCardLikeCount}
+            initialCommentCount={sharedCardCommentCount}
+            initialUserHasLiked={initialUserHasLiked}
             isLoggedIn={isLoggedIn}
+            snsShareEnabled={snsShareEnabled}
+            showBoardPublish={showBoardPublishButton && isLoggedIn}
           />
         </div>
       )}

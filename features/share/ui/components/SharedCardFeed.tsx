@@ -24,7 +24,7 @@ function SharedCardItem({ card, onReload }: { card: SharedCard; onReload: () => 
         likeCount, liked, handleLike,
         comments, commentLoading,
         loadComments, handleAddComment,
-    } = useCardActions(card.id, card.like_count, card.user_has_liked)
+    } = useCardActions(card.id, card.like_count, card.user_has_liked, card.comment_count)
     const [commentOpen, setCommentOpen] = useState(false)
     const [deleting, setDeleting] = useState(false)
 

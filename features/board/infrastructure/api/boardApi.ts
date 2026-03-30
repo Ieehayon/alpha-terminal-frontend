@@ -16,8 +16,14 @@ export async function fetchBoardRead(boardId: number): Promise<BoardListItem> {
     return res.json()
 }
 
-export async function createBoardPost(title: string, content: string): Promise<BoardListItem> {
-    const res = await httpClient.post("/board", { title, content })
+export async function createBoardPost(
+    title: string,
+    content: string,
+    sharedCardId?: number | null
+): Promise<BoardListItem> {
+    const body: { title: string; content: string; shared_card_id?: number } = { title, content }
+    if (sharedCardId != null) body.shared_card_id = sharedCardId
+    const res = await httpClient.post("/board", body)
     return res.json()
 }
 

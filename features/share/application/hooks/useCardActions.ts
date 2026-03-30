@@ -9,7 +9,12 @@ import {
 } from "../../infrastructure/api/shareApi"
 import { getOrCreateGuestId } from "../../infrastructure/utils/guestName"
 
-export function useCardActions(cardId: number, initialLikeCount: number, initialLiked = false) {
+export function useCardActions(
+    cardId: number,
+    initialLikeCount: number,
+    initialLiked = false,
+    initialCommentCount = 0
+) {
     const [likeCount, setLikeCount] = useState(initialLikeCount)
     const [liked, setLiked] = useState(initialLiked)
     const [likeLoading, setLikeLoading] = useState(false)
@@ -26,9 +31,14 @@ export function useCardActions(cardId: number, initialLikeCount: number, initial
 
     const [comments, setComments] = useState<CardComment[]>([])
     const [commentLoading, setCommentLoading] = useState(false)
-    const [commentCount, setCommentCount] = useState(0)
+    const [commentCount, setCommentCount] = useState(initialCommentCount)
+
+    useEffect(() => {
+        setCommentCount(initialCommentCount)
+    }, [initialCommentCount, cardId])
 
     const loadComments = useCallback(async () => {
+        if (cardId <= 0) return
         setCommentLoading(true)
         try {
             const res = await fetchComments(cardId)
@@ -40,7 +50,7 @@ export function useCardActions(cardId: number, initialLikeCount: number, initial
     }, [cardId])
 
     const handleLike = useCallback(async () => {
-        if (likeLoading) return
+        if (cardId <= 0 || likeLoading) return
         getOrCreateGuestId() // guest_id 쿠키 보장 (익명 사용자 식별)
         // 낙관적 업데이트
         setLiked((prev) => !prev)
@@ -61,6 +71,7 @@ export function useCardActions(cardId: number, initialLikeCount: number, initial
 
     const handleAddComment = useCallback(
         async (content: string, nickname: string) => {
+            if (cardId <= 0) return
             await addComment(cardId, content, nickname)
             await loadComments()
         },

@@ -2,9 +2,29 @@
 
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
+import useSWR from "swr"
 import { useBoardRead } from "@/features/board/application/hooks/useBoardRead"
 import { useAtomValue } from "jotai"
 import { authStateAtom } from "@/features/auth/application/atoms/authAtom"
+import StockSummaryCard from "@/app/components/StockSummaryCard"
+import { fetchSharedCard } from "@/features/share/infrastructure/api/shareApi"
+import type { HeatmapItem } from "@/features/stock/domain/model/dailyReturnsHeatmap"
+
+function isSentiment(v: string): v is "POSITIVE" | "NEGATIVE" | "NEUTRAL" {
+    return v === "POSITIVE" || v === "NEGATIVE" || v === "NEUTRAL"
+}
+
+function isSourceType(v: string): v is "NEWS" | "DISCLOSURE" | "REPORT" {
+    return v === "NEWS" || v === "DISCLOSURE" || v === "REPORT"
+}
+
+async function fetchHeatmapForSymbol(symbol: string): Promise<HeatmapItem | null> {
+    const sym = symbol.trim().toUpperCase()
+    const r = await fetch(`/api/stocks/daily-returns-heatmap?symbols=${encodeURIComponent(sym)}&weeks=8`)
+    if (!r.ok) return null
+    const data = await r.json()
+    return data?.items?.[sym] ?? null
+}
 
 export default function BoardReadPage() {
     const params = useParams()
@@ -13,8 +33,23 @@ export default function BoardReadPage() {
     const authState = useAtomValue(authStateAtom)
     const isAuthenticated = authState.status === "AUTHENTICATED"
     const currentNickname = authState.status === "AUTHENTICATED" ? authState.user.nickname : null
+    const currentAccountId =
+        authState.status === "AUTHENTICATED" ? authState.user.accountId : ""
 
     const { post, isLoading, error, isDeleting, deletePost } = useBoardRead(boardId)
+
+    const linkedCardId = post?.shared_card_id ?? null
+
+    const { data: sharedCard, isLoading: cardLoading } = useSWR(
+        linkedCardId != null ? ["board-shared-card", linkedCardId] : null,
+        () => fetchSharedCard(linkedCardId!)
+    )
+
+    const heatmapSymbol = sharedCard?.symbol?.trim().toUpperCase() ?? null
+    const { data: heatmapItem } = useSWR(
+        heatmapSymbol ? ["board-heatmap", heatmapSymbol] : null,
+        () => fetchHeatmapForSymbol(heatmapSymbol!)
+    )
 
     const handleDelete = async () => {
         if (!confirm("게시물을 삭제하시겠습니까?")) return
@@ -52,6 +87,19 @@ export default function BoardReadPage() {
         )
     }
 
+    const hasLinkedCard = Boolean(post.shared_card_id)
+    const showExtraBody =
+        Boolean(post.shared_card_id) &&
+        sharedCard != null &&
+        post.content.trim() !== sharedCard.summary.trim()
+    const cardLoadFailed = hasLinkedCard && !cardLoading && sharedCard === undefined
+
+    const isCardOwner =
+        isAuthenticated &&
+        sharedCard != null &&
+        currentAccountId !== "" &&
+        String(sharedCard.sharer_account_id) === String(currentAccountId)
+
     return (
         <main className="min-h-screen bg-background text-foreground p-6 md:p-10 max-w-3xl mx-auto">
             <article>
@@ -60,6 +108,11 @@ export default function BoardReadPage() {
                         {post.title}
                     </h1>
                     <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                        {hasLinkedCard && (
+                            <span className="rounded border border-amber-600/50 px-1.5 py-0.5 text-[10px] font-mono uppercase text-amber-600 dark:text-amber-400">
+                                AI 분석 카드
+                            </span>
+                        )}
                         <span>{post.nickname}</span>
                         <span>·</span>
                         <time dateTime={post.created_at}>
@@ -88,9 +141,52 @@ export default function BoardReadPage() {
                     </div>
                 </header>
 
-                <div className="prose prose-sm max-w-none text-gray-800 dark:text-gray-200 leading-7 whitespace-pre-wrap">
-                    {post.content}
-                </div>
+                {hasLinkedCard && cardLoading && (
+                    <div className="mb-8 h-48 rounded-lg border border-gray-200 animate-pulse bg-gray-100 dark:border-gray-700 dark:bg-gray-800" />
+                )}
+
+                {hasLinkedCard && !cardLoading && sharedCard && (
+                    <section className="mb-8" aria-label="연결된 AI 분석 카드">
+                        <StockSummaryCard
+                            symbol={sharedCard.symbol}
+                            name={sharedCard.name}
+                            summary={sharedCard.summary}
+                            tags={sharedCard.tags.map((t) => ({ label: t }))}
+                            sentiment={isSentiment(sharedCard.sentiment) ? sharedCard.sentiment : "NEUTRAL"}
+                            sentiment_score={sharedCard.sentiment_score}
+                            confidence={sharedCard.confidence}
+                            source_type={isSourceType(sharedCard.source_type) ? sharedCard.source_type : "NEWS"}
+                            url={sharedCard.url ?? undefined}
+                            heatmap={
+                                heatmapItem ? { item: heatmapItem, weeks: 8, asOf: null } : undefined
+                            }
+                            analyzed_at={sharedCard.analyzed_at}
+                            isLoggedIn={isAuthenticated}
+                            sharedCardId={sharedCard.id}
+                            sharedCardLikeCount={sharedCard.like_count}
+                            sharedCardCommentCount={sharedCard.comment_count}
+                            initialUserHasLiked={sharedCard.user_has_liked}
+                            snsShareEnabled={isCardOwner}
+                            showBoardPublishButton={false}
+                        />
+                    </section>
+                )}
+
+                {(!hasLinkedCard || showExtraBody || cardLoadFailed) && (
+                    <div className="prose prose-sm max-w-none text-gray-800 dark:text-gray-200 leading-7 whitespace-pre-wrap">
+                        {showExtraBody && (
+                            <p className="text-xs font-mono text-gray-500 dark:text-gray-400 mb-2">
+                                작성자 본문
+                            </p>
+                        )}
+                        {cardLoadFailed && (
+                            <p className="text-xs text-amber-600 dark:text-amber-400 mb-2">
+                                연결된 분석 카드를 불러오지 못했습니다. 아래는 게시글 본문입니다.
+                            </p>
+                        )}
+                        {post.content}
+                    </div>
+                )}
             </article>
 
             <footer className="mt-10 flex flex-wrap items-center gap-3 border-t border-gray-200 pt-6 dark:border-gray-700">

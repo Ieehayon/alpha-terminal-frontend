@@ -59,8 +59,16 @@ export default function BoardPage() {
                                         className="flex items-center justify-between px-5 py-3.5 hover:bg-surface-container transition-none"
                                     >
                                         <div className="min-w-0">
-                                                            <p className="truncate font-mono text-sm font-medium text-on-surface">
-                                                {post.title}
+                                                            <p className="truncate font-mono text-sm font-medium text-on-surface flex items-center gap-2">
+                                                {post.shared_card_id != null && (
+                                                    <span
+                                                        className="shrink-0 rounded border border-amber-600/40 px-1 py-0.5 text-[9px] uppercase text-amber-700 dark:text-amber-400"
+                                                        title="AI 분석 카드 연결"
+                                                    >
+                                                        AI
+                                                    </span>
+                                                )}
+                                                <span className="truncate">{post.title}</span>
                                             </p>
                                             <p className="mt-0.5 font-mono text-xs text-outline">
                                                 {post.nickname} · {new Date(post.created_at).toLocaleDateString("ko-KR")}
