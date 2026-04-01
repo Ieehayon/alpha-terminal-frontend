@@ -7,6 +7,7 @@ import { useBoardRead } from "@/features/board/application/hooks/useBoardRead"
 import { useAtomValue } from "jotai"
 import { authStateAtom } from "@/features/auth/application/atoms/authAtom"
 import StockSummaryCard from "@/app/components/StockSummaryCard"
+import { ShareActionBar } from "@/features/share/ui/components/ShareActionBar"
 import { fetchSharedCard } from "@/features/share/infrastructure/api/shareApi"
 import type { HeatmapItem } from "@/features/stock/domain/model/dailyReturnsHeatmap"
 
@@ -88,10 +89,11 @@ export default function BoardReadPage() {
     }
 
     const hasLinkedCard = Boolean(post.shared_card_id)
+    const isAiCard = hasLinkedCard && sharedCard != null && sharedCard.symbol !== "BOARD"
+    const isBoardCard = hasLinkedCard && sharedCard != null && sharedCard.symbol === "BOARD"
     const showExtraBody =
-        Boolean(post.shared_card_id) &&
-        sharedCard != null &&
-        post.content.trim() !== sharedCard.summary.trim()
+        isAiCard &&
+        post.content.trim() !== sharedCard!.summary.trim()
     const cardLoadFailed = hasLinkedCard && !cardLoading && sharedCard === undefined
 
     const isCardOwner =
@@ -108,7 +110,7 @@ export default function BoardReadPage() {
                         {post.title}
                     </h1>
                     <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
-                        {hasLinkedCard && (
+                        {isAiCard && (
                             <span className="rounded border border-amber-600/50 px-1.5 py-0.5 text-[10px] font-mono uppercase text-amber-600 dark:text-amber-400">
                                 AI 분석 카드
                             </span>
@@ -145,7 +147,7 @@ export default function BoardReadPage() {
                     <div className="mb-8 h-48 rounded-lg border border-gray-200 animate-pulse bg-gray-100 dark:border-gray-700 dark:bg-gray-800" />
                 )}
 
-                {hasLinkedCard && !cardLoading && sharedCard && (
+                {isAiCard && sharedCard && (
                     <section className="mb-8" aria-label="연결된 AI 분석 카드">
                         <StockSummaryCard
                             symbol={sharedCard.symbol}
@@ -172,20 +174,42 @@ export default function BoardReadPage() {
                     </section>
                 )}
 
-                {(!hasLinkedCard || showExtraBody || cardLoadFailed) && (
-                    <div className="prose prose-sm max-w-none text-gray-800 dark:text-gray-200 leading-7 whitespace-pre-wrap">
-                        {showExtraBody && (
-                            <p className="text-xs font-mono text-gray-500 dark:text-gray-400 mb-2">
-                                작성자 본문
-                            </p>
-                        )}
-                        {cardLoadFailed && (
-                            <p className="text-xs text-amber-600 dark:text-amber-400 mb-2">
-                                연결된 분석 카드를 불러오지 못했습니다. 아래는 게시글 본문입니다.
-                            </p>
-                        )}
+                {/* 일반 게시물 본문 (카드 스타일) */}
+                {(isBoardCard || !hasLinkedCard || cardLoadFailed) && (
+                    <section className="mb-8">
+                        <div className="border border-outline bg-surface-container-low p-5">
+                            <div className="prose prose-sm max-w-none text-on-surface leading-7 whitespace-pre-wrap font-mono text-sm">
+                                {cardLoadFailed && (
+                                    <p className="text-xs text-amber-600 dark:text-amber-400 mb-2">
+                                        연결된 분석 카드를 불러오지 못했습니다.
+                                    </p>
+                                )}
+                                {post.content}
+                            </div>
+                        </div>
+                    </section>
+                )}
+
+                {showExtraBody && (
+                    <div className="mb-8 prose prose-sm max-w-none text-gray-800 dark:text-gray-200 leading-7 whitespace-pre-wrap">
+                        <p className="text-xs font-mono text-gray-500 dark:text-gray-400 mb-2">
+                            작성자 본문
+                        </p>
                         {post.content}
                     </div>
+                )}
+
+                {/* 좋아요 / 댓글 — AI카드가 아닌 일반 게시물에서도 동작 */}
+                {hasLinkedCard && !cardLoading && sharedCard && !isAiCard && (
+                    <ShareActionBar
+                        cardId={sharedCard.id}
+                        initialLikeCount={sharedCard.like_count}
+                        initialCommentCount={sharedCard.comment_count}
+                        initialUserHasLiked={sharedCard.user_has_liked}
+                        isLoggedIn={isAuthenticated}
+                        snsShareEnabled={false}
+                        showBoardPublish={false}
+                    />
                 )}
             </article>
 
