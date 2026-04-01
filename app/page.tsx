@@ -18,6 +18,8 @@ function Skeleton() {
 export default function HomePage() {
     const state = useHome()
 
+    const isPublic = state.status === "PUBLIC_READY"
+
     return (
         <main className="mx-auto max-w-2xl px-4 py-8 pb-20 md:pb-8">
             <div className="mb-6 border-b border-outline pb-4">
@@ -25,7 +27,9 @@ export default function HomePage() {
                     HOME
                 </div>
                 <div className="font-mono text-sm text-on-surface-variant mt-0.5">
-                    내 관심종목 AI 센티먼트 · 오늘의 알파 기회
+                    {isPublic
+                        ? "공개 관심종목 AI 센티먼트 · 로그인하면 내 종목 기준으로 전환됩니다"
+                        : "내 관심종목 AI 센티먼트 · 오늘의 알파 기회"}
                 </div>
             </div>
 
@@ -33,14 +37,17 @@ export default function HomePage() {
 
             {state.status === "UNAUTHENTICATED" && (
                 <div className="border border-dashed border-outline px-6 py-12 text-center">
-                    <p className="font-mono text-sm text-on-surface-variant mb-4">
-                        AI 분석 현황을 보려면 로그인이 필요합니다.
+                    <p className="font-mono text-sm text-on-surface-variant mb-1">
+                        관심종목을 등록하고 AI 센티먼트 분석을 받아보세요.
+                    </p>
+                    <p className="font-mono text-xs text-outline mb-4">
+                        공포/탐욕 게이지 · 알파 기회 종목 · 오늘의 시장 브리핑 제공
                     </p>
                     <Link
                         href="/login"
                         className="font-mono text-xs bg-primary text-white px-5 py-2 uppercase hover:opacity-90 inline-block"
                     >
-                        로그인 →
+                        카카오로 시작하기 →
                     </Link>
                 </div>
             )}
@@ -68,8 +75,21 @@ export default function HomePage() {
                 </div>
             )}
 
-            {state.status === "READY" && (
+            {(state.status === "READY" || state.status === "PUBLIC_READY") && (
                 <div className="space-y-3">
+                    {isPublic && (
+                        <div className="flex items-center justify-between border border-outline-variant bg-surface-container px-4 py-2.5">
+                            <span className="font-mono text-xs text-on-surface-variant">
+                                공개 관심종목 기준 데이터입니다. 로그인하면 내 관심종목으로 전환됩니다.
+                            </span>
+                            <Link
+                                href="/login"
+                                className="font-mono text-xs font-bold text-primary uppercase shrink-0 ml-4 hover:opacity-80"
+                            >
+                                로그인 →
+                            </Link>
+                        </div>
+                    )}
                     <HomeSentimentGauge
                         gauge={state.stats.gauge}
                         distribution={state.stats.distribution}
@@ -79,22 +99,6 @@ export default function HomePage() {
                 </div>
             )}
 
-            {(state.status === "READY" || state.status === "EMPTY") && (
-                <div className="mt-5 flex gap-3">
-                    <Link
-                        href="/dashboard"
-                        className="flex-1 border border-outline py-2 text-center font-mono text-xs text-on-surface-variant hover:bg-surface-container uppercase"
-                    >
-                        대시보드
-                    </Link>
-                    <Link
-                        href="/watchlist"
-                        className="flex-1 border border-outline py-2 text-center font-mono text-xs text-on-surface-variant hover:bg-surface-container uppercase"
-                    >
-                        관심종목
-                    </Link>
-                </div>
-            )}
         </main>
     )
 }

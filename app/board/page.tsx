@@ -1,9 +1,12 @@
 "use client"
 
 import Link from "next/link"
+import { useAtomValue } from "jotai"
+import { authAtom } from "@/store/authAtom"
 import { useBoardList } from "@/features/board/application/hooks/useBoardList"
 
 export default function BoardPage() {
+    const isAuthenticated = useAtomValue(authAtom) === "AUTHENTICATED"
     const { items, page, totalPages, isLoading, error, goToPage } = useBoardList()
 
     return (
@@ -17,13 +20,15 @@ export default function BoardPage() {
                         종목 분석·시황 관련 게시물을 공유합니다.
                     </div>
                 </div>
-                <Link
-                    href="/board/create"
-                    className="inline-flex items-center gap-1.5 self-start bg-primary px-4 py-2 font-mono text-[11px] text-white uppercase hover:opacity-90 sm:self-auto"
-                >
-                    <span className="material-symbols-outlined text-[14px]">edit</span>
-                    NEW_POST
-                </Link>
+                {isAuthenticated && (
+                    <Link
+                        href="/board/create"
+                        className="inline-flex items-center gap-1.5 self-start bg-primary px-4 py-2 font-mono text-[11px] text-white uppercase hover:opacity-90 sm:self-auto"
+                    >
+                        <span className="material-symbols-outlined text-[14px]">edit</span>
+                        NEW_POST
+                    </Link>
+                )}
             </header>
 
             <section aria-label="게시물 목록">
@@ -42,12 +47,14 @@ export default function BoardPage() {
                         <p className="font-mono text-sm text-on-surface-variant">
                             아직 게시물이 없습니다.
                         </p>
-                        <Link
-                            href="/board/create"
-                            className="mt-4 inline-block bg-primary px-4 py-2 font-mono text-sm text-white uppercase hover:opacity-90"
-                        >
-                            첫 게시물 작성하기
-                        </Link>
+                        {isAuthenticated && (
+                            <Link
+                                href="/board/create"
+                                className="mt-4 inline-block bg-primary px-4 py-2 font-mono text-sm text-white uppercase hover:opacity-90"
+                            >
+                                첫 게시물 작성하기
+                            </Link>
+                        )}
                     </div>
                 ) : (
                     <>
@@ -60,7 +67,7 @@ export default function BoardPage() {
                                     >
                                         <div className="min-w-0">
                                                             <p className="truncate font-mono text-sm font-medium text-on-surface flex items-center gap-2">
-                                                {post.shared_card_id != null && (
+                                                {post.shared_card_id != null && post.title.startsWith("[AI") && (
                                                     <span
                                                         className="shrink-0 rounded border border-amber-600/40 px-1 py-0.5 text-[9px] uppercase text-amber-700 dark:text-amber-400"
                                                         title="AI 분석 카드 연결"
