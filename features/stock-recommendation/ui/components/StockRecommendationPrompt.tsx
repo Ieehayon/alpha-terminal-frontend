@@ -31,7 +31,7 @@ export function StockRecommendationPrompt() {
     const isEmpty = !question.trim()
 
     return (
-        <main className="p-6 md:p-8 max-w-2xl mx-auto">
+        <main className="p-6 pt-8 md:p-8 max-w-2xl mx-auto">
             <div className="mb-6 border-b border-outline pb-4">
                 <div className="font-headline font-bold text-on-surface text-xl uppercase tracking-tighter">
                     주식 추천
