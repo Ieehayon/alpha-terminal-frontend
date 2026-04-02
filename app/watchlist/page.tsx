@@ -67,7 +67,7 @@ export default function WatchlistPage() {
     }
 
     return (
-        <main className="min-h-screen p-6 pt-8 md:p-8 max-w-2xl mx-auto">
+        <main className="max-w-5xl mx-auto p-6 pt-8 md:p-8">
             <div className="mb-6 border-b border-outline pb-4">
                 <div className="font-headline font-bold text-on-surface text-xl uppercase tracking-tighter">
                     WATCHLIST

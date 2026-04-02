@@ -96,7 +96,7 @@ export default function DashboardPage() {
 
     return (
         <main
-            className="p-6 pt-8 md:p-8"
+            className="max-w-6xl mx-auto p-6 pt-8 md:p-8"
             aria-busy={running}
         >
             <header className="mb-6 flex items-center justify-between border-b border-outline pb-4">

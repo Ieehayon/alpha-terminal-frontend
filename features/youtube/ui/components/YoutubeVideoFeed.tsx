@@ -23,7 +23,7 @@ export function YoutubeVideoFeed() {
     })
 
     return (
-        <main className="p-6 pt-8 md:p-8">
+        <main className="max-w-6xl mx-auto p-6 pt-8 md:p-8">
             <div className="mb-6 border-b border-outline pb-4 flex items-end justify-between gap-4">
                 <div>
                     <div className="font-headline font-bold text-on-surface text-xl uppercase tracking-tighter">

@@ -31,15 +31,15 @@ export function StockRecommendationPrompt() {
     const isEmpty = !question.trim()
 
     return (
-        <main className="p-6 pt-8 md:p-8 max-w-2xl mx-auto">
-            <div className="mb-6 border-b border-outline pb-4">
+        <main className="max-w-5xl mx-auto p-6 pt-8 md:p-8">
+            <header className="mb-6 border-b border-outline pb-4">
                 <div className="font-headline font-bold text-on-surface text-xl uppercase tracking-tighter">
-                    주식 추천
+                    STOCK_PICKS
                 </div>
                 <div className="font-mono text-sm text-on-surface-variant mt-0.5">
                     관심종목 테마를 기반으로 AI가 질문에 답변합니다.
                 </div>
-            </div>
+            </header>
 
             {/* 질문 입력 영역 */}
             <section className="mb-4">

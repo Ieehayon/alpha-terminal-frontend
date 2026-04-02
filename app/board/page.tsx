@@ -10,7 +10,7 @@ export default function BoardPage() {
     const { items, page, totalPages, isLoading, error, goToPage } = useBoardList()
 
     return (
-        <main className="p-6 pt-8 md:p-10 max-w-3xl mx-auto">
+        <main className="max-w-5xl mx-auto p-6 pt-8 md:p-8">
             <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-outline pb-4">
                 <div>
                     <div className="font-headline font-bold text-on-surface text-xl uppercase tracking-tighter">
