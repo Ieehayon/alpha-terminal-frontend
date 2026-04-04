@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:33333";
 
 async function handler(
@@ -16,6 +18,8 @@ async function handler(
   if (contentType) requestHeaders.set("content-type", contentType);
   const authorization = request.headers.get("authorization");
   if (authorization) requestHeaders.set("authorization", authorization);
+  const accept = request.headers.get("accept");
+  if (accept) requestHeaders.set("accept", accept);
 
   let body: ArrayBuffer | undefined;
   if (request.method !== "GET" && request.method !== "HEAD") {
