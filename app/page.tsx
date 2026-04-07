@@ -21,8 +21,8 @@ export default function HomePage() {
     const isPublic = state.status === "PUBLIC_READY"
 
     return (
-        <main className="mx-auto max-w-2xl px-4 py-8 pb-20 md:pb-8">
-            <div className="mb-6 border-b border-outline pb-4">
+        <main className="max-w-5xl mx-auto p-6 pt-8 pb-24 md:p-8 md:pb-8">
+            <header className="mb-6 border-b border-outline pb-4">
                 <div className="font-headline font-bold text-on-surface text-xl uppercase tracking-tighter">
                     HOME
                 </div>
@@ -31,7 +31,7 @@ export default function HomePage() {
                         ? "공개 관심종목 AI 센티먼트 · 로그인하면 내 종목 기준으로 전환됩니다"
                         : "내 관심종목 AI 센티먼트 · 오늘의 알파 기회"}
                 </div>
-            </div>
+            </header>
 
             {state.status === "LOADING" && <Skeleton />}
 
