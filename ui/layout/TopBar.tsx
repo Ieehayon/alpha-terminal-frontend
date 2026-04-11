@@ -11,6 +11,7 @@ const NAV_ITEMS = [
     { href: "/dashboard", label: "DASHBOARD" },
     { href: "/watchlist", label: "WATCHLIST" },
     { href: "/board", label: "BOARD" },
+    { href: "/news", label: "NEWS" },
     { href: "/stock-recommendation", label: "PICKS" },
     { href: "/youtube", label: "VIDEOS" },
 ]

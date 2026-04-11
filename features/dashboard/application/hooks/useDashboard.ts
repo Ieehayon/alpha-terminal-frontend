@@ -86,9 +86,11 @@ export const useDashboard = () => {
 
             setElapsedSeconds(Math.round((Date.now() - startedAt) / 1000))
             await load()
+            setProgressEvents([])
         } catch (err) {
             setElapsedSeconds(Math.round((Date.now() - startedAt) / 1000))
             setError(formatPipelineError(err))
+            setProgressEvents([])
         }
     }, [load])
 

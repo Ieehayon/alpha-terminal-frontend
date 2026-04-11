@@ -1,4 +1,3 @@
-import { env } from "@/infrastructure/config/env"
 import { readApiError } from "@/infrastructure/http/apiError"
 import { httpClient } from "@/infrastructure/http/httpClient"
 import type { PipelineProgressEvent } from "../../domain/model/pipelineProgressEvent"

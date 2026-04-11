@@ -91,6 +91,9 @@ export default function Navbar() {
                     <Link href="/board" className={menuItemClass("/board")}>
                         게시판
                     </Link>
+                    <Link href="/news" className={menuItemClass("/news")}>
+                        뉴스
+                    </Link>
                     <Link href="/youtube" className={menuItemClass("/youtube")}>
                         영상
                     </Link>
@@ -206,6 +209,13 @@ export default function Navbar() {
                                 onClick={closeMobile}
                             >
                                 게시판
+                            </Link>
+                            <Link
+                                href="/news"
+                                className={drawerLinkClass("/news")}
+                                onClick={closeMobile}
+                            >
+                                뉴스
                             </Link>
                             <Link
                                 href="/youtube"

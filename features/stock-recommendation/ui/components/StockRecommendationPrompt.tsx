@@ -113,6 +113,11 @@ export function StockRecommendationPrompt() {
                         <span className="font-mono text-xs font-bold text-on-surface uppercase tracking-widest">
                             {answer.in_scope ? "ANALYSIS_RESULT" : "OUT_OF_SCOPE"}
                         </span>
+                        {answer.is_personalized && (
+                            <span className="ml-auto font-mono text-[10px] font-bold text-primary border border-primary px-1.5 py-0.5 uppercase tracking-widest">
+                                PERSONALIZED
+                            </span>
+                        )}
                     </div>
                     <div className="px-4 py-2 border-b border-outline-variant bg-surface-container">
                         <span className="font-mono text-xs text-outline">Q. </span>

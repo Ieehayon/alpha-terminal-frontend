@@ -37,6 +37,8 @@ jobs:
           push: true
           tags: ghcr.io/${{ secrets.REPO_USER }}/multi-agent-ui:latest
           platforms: linux/amd64,linux/arm64
+          cache-from: type=registry,ref=ghcr.io/${{ secrets.REPO_USER }}/multi-agent-ui:cache
+          cache-to: type=registry,ref=ghcr.io/${{ secrets.REPO_USER }}/multi-agent-ui:cache,mode=max
 
   deploy:
     needs: build-and-push
@@ -51,20 +53,27 @@ jobs:
 
       - name: Stop old container
         run: |
+          docker stop alphadesk-web || true
+          docker rm alphadesk-web || true
           docker image prune -f
-          docker logout
 
       - name: Run container
         run: |
-          docker-compose up -d
+          docker run -d \
+            --name alphadesk-web \
+            -p 3000:3000 \
+            -e BACKEND_URL=http://alphadesk-api:33333 \
+            --network alphadesk-network \
+            --restart unless-stopped \
+            ghcr.io/${{ secrets.REPO_USER }}/multi-agent-ui:latest
 
       - name: Health check
         run: |
           sleep 5
-          if curl -sSf http://localhost:37123/ > /dev/null; then
-            echo "multi-agent-ui is UP"
+          if curl -sSf http://localhost:3000/ > /dev/null; then
+            echo "alphadesk-web is UP"
           else
             echo "Health check failed"
-            docker logs multi-agent-ui --tail 200
+            docker logs alphadesk-web --tail 200
             exit 1
           fi

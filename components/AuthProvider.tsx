@@ -42,7 +42,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           setAuth("AUTHENTICATED");
         }
       });
-  }, [setAuth, setAuthState]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <>{children}</>;
 }
