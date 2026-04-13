@@ -3,23 +3,23 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAtomValue } from "jotai"
-import { authAtom } from "@/store/authAtom"
+import { authStateAtom } from "@/features/auth/application/atoms/authAtom"
 import { useMarketAnalysis } from "../../application/hooks/useMarketAnalysis"
 
 export function StockRecommendationPrompt() {
-    const authState = useAtomValue(authAtom)
+    const authState = useAtomValue(authStateAtom)
     const router = useRouter()
     const { question, setQuestion, answer, isLoading, error, submit, reset } = useMarketAnalysis()
 
-    // 비인증 사용자 → 로그인 리다이렉트
+    // LOADING 중에는 리다이렉트 하지 않음 — AuthProvider가 /me 응답 받을 때까지 대기
     useEffect(() => {
-        if (authState === "UNAUTHENTICATED") {
+        if (authState.status === "UNAUTHENTICATED") {
             router.replace("/login")
         }
     }, [authState, router])
 
-    // 인증 상태 확인 중 또는 리다이렉트 직전에는 렌더하지 않음 (flash 방지)
-    if (authState !== "AUTHENTICATED") return null
+    // LOADING 또는 리다이렉트 직전에는 렌더하지 않음 (flash 방지)
+    if (authState.status !== "AUTHENTICATED") return null
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
